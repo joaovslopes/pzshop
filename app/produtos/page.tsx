@@ -76,7 +76,7 @@ export default function ProdutosPage() {
       try {
         setLoading(true)
 
-        const response = await axios.get("http://localhost:5000/api/products")
+        const response = await axios.get("https://api.pzdev.com.br/api/products")
 
         if (response.data.success) {
           const data = response.data.data.map((product: any) => ({
@@ -86,7 +86,7 @@ export default function ProdutosPage() {
             price: product.price || 0,
             image: product.image?.startsWith("http")
               ? product.image
-              : `http://localhost:5000${product.image}`,
+              : `https://api.pzdev.com.br${product.image}`,
             video: product.videoUrl,
             isLauncher: product.isLauncher || false,
             categoryId: product.category?._id || null

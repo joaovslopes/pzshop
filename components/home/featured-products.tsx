@@ -27,7 +27,7 @@ export function FeaturedProducts() {
     const fetchProducts = async () => {
       try {
         setLoading(true)
-        const response = await axios.get("http://localhost:5000/api/products")
+        const response = await axios.get("https://api.pzdev.com.br/api/products")
 
         if (!response.data.success) {
           throw new Error("Erro na resposta da API")
@@ -49,7 +49,7 @@ export function FeaturedProducts() {
     ...product,
     image: product.image?.startsWith("http")
       ? product.image
-      : `http://localhost:5000${product.image}`
+      : `https://api.pzdev.com.br/${product.image}`
   }))
 
   return (

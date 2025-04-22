@@ -8,7 +8,7 @@ export function HeroSection() {
   const { t } = useTranslation()
 
   return (
-    <section className="relative w-full py-24 md:py-32 bg-gradient-to-b from-[#070707] to-background">
+    <section className="relative w-full py-24 md:py-32">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center text-center space-y-8">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tighter">{t("common.welcome")}</h1>
