@@ -1,20 +1,29 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { useTranslation } from "@/hooks/use-translation"
-import Image from "next/image"
+import { useTheme } from "next-themes"
+import { Moon, Sun } from "lucide-react"
 import Logo from "../public/logo-extensa.png"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const pathname = usePathname()
   const { t } = useTranslation()
+
+  const { theme, setTheme, resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const menuItems = [
     { name: t("common.home"), href: "/" },
@@ -25,6 +34,8 @@ export function Header() {
   const isActive = (path: string) => {
     return pathname === path
   }
+
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-[#070707] text-white">
@@ -49,6 +60,20 @@ export function Header() {
           ))}
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
+
+            {/* Botão de troca de tema (desktop) */}
+            {mounted && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-[#ffffff]"
+                onClick={() => setTheme(resolvedTheme === "light" ? "dark" : "light")}
+              >
+                {resolvedTheme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+              </Button>
+            )}
+
+
             <Button
               variant="outline"
               asChild
@@ -105,8 +130,22 @@ export function Header() {
                   {t("common.register")}
                 </Link>
               </Button>
-            </div>
+              </div>
+                  {/* Botão de troca de tema (mobile) */}
+                  {mounted && (
+                <Button
+                  variant="ghost"
+                  className="text-white w-full"
+                  onClick={() => setTheme(resolvedTheme === "light" ? "dark" : "light")}
+                >
+                  <div className="flex items-center gap-2 justify-center">
+                    {resolvedTheme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+                    <span>{resolvedTheme === "light" ? "Modo Escuro" : "Modo Claro"}</span>
+                  </div>
+                </Button>
+              )}
           </div>
+          
         )}
       </div>
     </header>
