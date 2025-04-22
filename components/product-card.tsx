@@ -48,7 +48,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <span className="font-bold text-primary text-base">
               R$ {product.price ?? "0,00"}
             </span>
-            <div className="flex bg-card text-white text-sm  rounded px-1 shadow">
+            <div className="flex bg-card text-sm font-medium px-1 ">
               /{product.tag}
             </div>
           </div>
