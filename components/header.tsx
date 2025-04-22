@@ -8,6 +8,8 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { useTranslation } from "@/hooks/use-translation"
+import Image from "next/image"
+import Logo from "../public/logo-extensa.png"
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -28,7 +30,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b bg-[#070707] text-white">
       <div className="container flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-[#ff8533]">PZ Dev</span>
+          <Image src={Logo} width={130} alt="logo" />
         </Link>
 
         {/* Desktop Navigation */}
