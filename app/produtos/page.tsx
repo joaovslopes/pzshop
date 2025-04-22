@@ -182,7 +182,7 @@ export default function ProdutosPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* Sidebar com filtros */}
             <div className={`${showFilters ? "block" : "hidden"} md:block`}>
-              <div className="border rounded-2xl p-4 sticky top-20">
+              <div className="border rounded-sm p-4 sticky top-20">
                 <h2 className="font-semibold text-lg mb-4">Categorias</h2>
                 <div className="space-y-4">
                   {categories.map((category) => (
