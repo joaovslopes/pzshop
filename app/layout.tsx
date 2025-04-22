@@ -5,13 +5,13 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Footer } from "@/components/footer"
 import { LanguageProvider } from "@/components/language-provider"
+import { Analytics } from "@vercel/analytics/react"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "PZ Store - Scripts e Launchers para MU Online",
-  description: "Scripts e Launchers para seu servidor MU Online",
-    generator: 'v0.dev'
+  description: "Scripts e Launchers para seu servidor MU Online"
 }
 
 export default function RootLayout({
@@ -31,6 +31,7 @@ export default function RootLayout({
             </div>
           </LanguageProvider>
         </ThemeProvider>
+        <Analytics /> {/* Aqui é onde você deve adicionar o componente */}
       </body>
     </html>
   )
