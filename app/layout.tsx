@@ -12,7 +12,10 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "PZ Store - Scripts e Launchers para MU Online",
-  description: "Scripts e Launchers para seu servidor MU Online"
+  description: "Scripts e Launchers para seu servidor MU Online",
+  icons: {
+    icon: '/favicon.ico',
+  },
 }
 
 export default function RootLayout({
