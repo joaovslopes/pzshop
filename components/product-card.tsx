@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import Image from "next/image"
 
 interface Product {
   _id: string
@@ -18,11 +19,13 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <div className="rounded-2xl border bg-card text-card-foreground shadow-sm overflow-hidden flex flex-col justify-between">
       {product.image && (
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-[341px] h-[371px] object-cover"
-        />
+       <Image
+       src={product.image || "/placeholder.svg"}
+       alt={product.name}
+       width={600}
+       height={340}
+       className="w-full h-full object-cover transition-transform duration-500 ease-in-out hover:scale-105"
+     />
       )}
 
       <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
