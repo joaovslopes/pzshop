@@ -16,6 +16,7 @@ interface Product {
   name: string
   description: string
   price: number
+  tag: string
   image?: string
   video?: string
   isLauncher?: boolean
@@ -82,6 +83,7 @@ export default function ProdutosPage() {
           const data = response.data.data.map((product: any) => ({
             id: product._id,
             name: product.name,
+            tag: product.tag,
             description: product.description,
             price: product.price || 0,
             image: product.image?.startsWith("http")
