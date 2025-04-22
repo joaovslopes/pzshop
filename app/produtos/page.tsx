@@ -47,7 +47,7 @@ export default function ProdutosPage() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/category")
+        const response = await axios.get("https://apisite.pzdev.com.br/api/category")
 
         if (response.data.success) {
           const data = response.data.data.map((cat: any) => ({
@@ -76,7 +76,7 @@ export default function ProdutosPage() {
       try {
         setLoading(true)
 
-        const response = await axios.get("https://api.pzdev.com.br/api/products")
+        const response = await axios.get("https://apisite.pzdev.com.br/api/products")
 
         if (response.data.success) {
           const data = response.data.data.map((product: any) => ({
@@ -86,7 +86,7 @@ export default function ProdutosPage() {
             price: product.price || 0,
             image: product.image?.startsWith("http")
               ? product.image
-              : `https://api.pzdev.com.br${product.image}`,
+              : `https://apisite.pzdev.com.br${product.image}`,
             video: product.videoUrl,
             isLauncher: product.isLauncher || false,
             categoryId: product.category?._id || null
