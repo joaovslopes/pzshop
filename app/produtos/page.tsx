@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { ChevronDown, ChevronUp, ListFilter} from "lucide-react"
+import { ChevronDown, ChevronUp, ListFilter } from "lucide-react"
 import { useTranslation } from "@/hooks/use-translation"
 import axios from "axios"
 import { cn } from "@/lib/utils"
@@ -163,79 +163,94 @@ export default function ProdutosPage() {
             </p>
           </div>
 
-    
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 rounded-sm">
             {/* Sidebar com filtros */}
-            <div className="rounded-md border shadow-sm bg-white mb-6">
-              <div className="border-b px-3 py-3 bg-primary text-white text-sm font-semibold flex justify-between items-center gap-2">
-               Categorias 
-               <ListFilter className="text-2xl"/>
-              </div>
+            {/* Sidebar com filtros */}
+            <div className={cn("md:col-span-1", showFilters ? "block" : "hidden", "md:block")}>
+              <div className="sticky top-24 h-fit rounded-md border shadow-sm bg-white mb-6">
+                <div className="border-b px-3 py-3 bg-primary text-white text-sm font-semibold flex justify-between items-center gap-2">
+                  Categorias
+                  <ListFilter className="text-2xl" />
+                </div>
 
-              <div className="flex flex-col">
-                {categories.map((category) => {
-                  const isActive = selectedCategories.includes(category.id)
-                  const isExpanded = expandedCategories[category.id]
+                <div className="flex flex-col">
+                  {categories.map((category) => {
+                    const isActive = selectedCategories.includes(category.id)
+                    const isExpanded = expandedCategories[category.id]
 
-                  return (
-                    <div key={category.id} className="border-b">
-                      {/* Categoria principal */}
-                      <div className="flex justify-between items-center w-full px-4 py-2 text-sm transition cursor-pointer">
-                        <span
-                          onClick={() => toggleCategoryFilter(category.id)}
-                          className={cn(
-                            "flex-1 text-left hover:text-primary",
-                            isActive ? "text-primary font-semibold" : "text-muted-foreground"
-                          )}
-                        >
-                          {category.name}
-                        </span>
-
-                        {category.subcategories && category.subcategories.length > 0 && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toggleCategory(category.id)
-                            }}
-                            className="text-muted-foreground hover:text-foreground"
+                    return (
+                      <div key={category.id} className="border-b">
+                        <div className="flex justify-between items-center w-full px-4 py-2 text-sm transition cursor-pointer">
+                          <span
+                            onClick={() => toggleCategoryFilter(category.id)}
+                            className={cn(
+                              "flex-1 text-left hover:text-primary",
+                              isActive ? "text-primary font-semibold" : "text-muted-foreground"
+                            )}
                           >
-                            <ChevronDown
-                              className={cn(
-                                "h-4 w-4 transform transition-transform",
-                                isExpanded && "rotate-180"
-                              )}
-                            />
-                          </button>
+                            {category.name}
+                          </span>
+
+                          {category.subcategories && category.subcategories.length > 0 && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleCategory(category.id)
+                              }}
+                              className="text-muted-foreground hover:text-foreground"
+                            >
+                              <ChevronDown
+                                className={cn(
+                                  "h-4 w-4 transform transition-transform",
+                                  isExpanded && "rotate-180"
+                                )}
+                              />
+                            </button>
+                          )}
+                        </div>
+
+                        {category.subcategories && isExpanded && (
+                          <div className="py-2 space-y-1">
+                            {category.subcategories.map((subcategory) => {
+                              const isSubActive = selectedSubcategories.includes(subcategory.id)
+                              return (
+                                <button
+                                  key={subcategory.id}
+                                  onClick={() => toggleSubcategoryFilter(subcategory.id)}
+                                  className={cn(
+                                    "w-full text-left text-sm px-5 py-1 transition hover:text-primary",
+                                    isSubActive
+                                      ? "bg-primary/20 text-primary font-medium"
+                                      : "hover:bg-muted text-muted-foreground"
+                                  )}
+                                >
+                                  {subcategory.name}
+                                </button>
+                              )
+                            })}
+                          </div>
                         )}
                       </div>
-
-
-                      {/* Subcategorias (dropdown) */}
-                      {category.subcategories && isExpanded && (
-                        <div className=" py-2 space-y-1">
-                          {category.subcategories.map((subcategory) => {
-                            const isSubActive = selectedSubcategories.includes(subcategory.id)
-                            return (
-                              <button
-                                key={subcategory.id}
-                                onClick={() => toggleSubcategoryFilter(subcategory.id)}
-                                className={cn(
-                                  "w-full text-left text-sm px-5 py-1 transition hover:text-primary",
-                                  isSubActive
-                                    ? "bg-primary/20 text-primary font-medium"
-                                    : "hover:bg-muted text-muted-foreground"
-                                )}
-                              >
-                                {subcategory.name}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
+            </div>
+
+            {/* Botão Filtros Mobile */}
+            <div className="md:hidden">
+              <Button
+                variant="outline"
+                className="w-full flex items-center justify-between"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <span className="flex items-center">
+                  <ListFilter className="mr-2 h-4 w-4" />
+                  {showFilters ? "Fechar Filtros" : "Abrir Filtros"}
+                </span>
+                {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
             </div>
 
 
