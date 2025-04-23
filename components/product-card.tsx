@@ -72,25 +72,30 @@ export function ProductCard({ product }: ProductCardProps) {
 
         <CardHeader>
           <CardTitle className="text-xl">{product.name}</CardTitle>
-          <CardDescription className="text-base">{truncatedDescription}</CardDescription>
+          <CardDescription className="text-base space-y-1">
+            {truncatedDescription.split('\n').map((line, index) => (
+              <p key={index}>{line}</p>
+            ))}
+          </CardDescription>
         </CardHeader>
 
-        <CardContent className="flex gap-1">
-          <div className="text-2xl font-bold text-[#ff8533]">
-            {new Intl.NumberFormat("pt-BR", {
-              style: "currency",
-              currency: "BRL",
-            }).format(Number(product.price))}
+        <CardContent className="flex justify-between items-center">
+          <div className="flex">
+            <div className="text-xl font-bold text-[#ff8533]">
+              {new Intl.NumberFormat("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              }).format(Number(product.price))}
+            </div>
+            <div className="text-muted-foreground text-sm mt-1">/{product.tag}</div>
           </div>
-          <div className="text-muted-foreground text-sm mt-1">/{product.tag}</div>
-        </CardContent>
-
-        <CardFooter className="flex justify-end pb-6">
           <Button className="rounded-xl bg-[#ff8533] hover:bg-[#ff8533]/90 text-white" onClick={handleBuyClick}>
             {t("common.buyNow")}
             <ExternalLink className="ml-2 h-4 w-4" />
           </Button>
-        </CardFooter>
+        </CardContent>
+
+
       </Card>
 
       {product.isLauncher && (
