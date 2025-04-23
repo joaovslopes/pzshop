@@ -8,7 +8,7 @@ export default function Home() {
   return (
     <>
       <Header />
-      <div className="flex flex-col gap-16 py-8">
+      <div className="flex flex-col ">
         <HeroSection />
         <FeaturedProducts />
       </div>

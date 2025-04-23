@@ -4,14 +4,15 @@ import { Button } from "@/components/ui/button"
 import { ArrowDown } from "lucide-react"
 import { useTranslation } from "@/hooks/use-translation"
 
+
 export function HeroSection() {
   const { t } = useTranslation()
 
   return (
-    <section className="relative w-full py-24 md:py-32">
+    <section className="relative w-full py-24 md:py-32 bg-custom-bg bg-cover bg-center bg-fixed">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center text-center space-y-8">
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tighter">{t("common.welcome")}</h1>
+          <h1 className="text-4xl text-white md:text-6xl font-bold tracking-tighter">{t("common.welcome")}</h1>
           <p className="text-xl md:text-2xl text-muted-foreground max-w-[700px]">{t("common.subtitle")}</p>
           <Button
             size="lg"
