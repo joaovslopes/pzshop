@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { ChevronDown, ChevronUp, Filter } from "lucide-react"
+import { ChevronDown, ChevronUp, ListFilter} from "lucide-react"
 import { useTranslation } from "@/hooks/use-translation"
 import axios from "axios"
 import { cn } from "@/lib/utils"
@@ -141,15 +141,15 @@ export default function ProdutosPage() {
   const filteredProducts = products.filter((product) => {
     const matchCategory =
       selectedCategories.length === 0 || selectedCategories.includes(product.categoryId)
-  
+
     const matchSubcategory =
       selectedSubcategories.length === 0 || selectedSubcategories.includes(product.subcategory)
-  
+
     return matchCategory && matchSubcategory
   })
-  
-  
-  
+
+
+
 
   return (
     <>
@@ -163,79 +163,82 @@ export default function ProdutosPage() {
             </p>
           </div>
 
-          <div className="md:hidden mb-4">
-            <Button
-              variant="outline"
-              className="w-full flex items-center justify-between"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <span className="flex items-center">
-                <Filter className="mr-2 h-4 w-4" />
-                Filtros
-              </span>
-              {showFilters ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+    
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 rounded-sm">
             {/* Sidebar com filtros */}
-            <div className={`${showFilters ? "block" : "hidden"} md:block`}>
-              <div className="border rounded-sm p-4 sticky top-20">
-                <h2 className="font-semibold text-lg mb-4">Categorias</h2>
-                <div className="space-y-4">
-                  {categories.map((category) => (
-                   <div key={category.id} className="space-y-2">
-                   <div className="flex items-center justify-between">
-                     <div className="flex items-center space-x-2">
-                       <Checkbox
-                         id={`category-${category.id}`}
-                         checked={selectedCategories.includes(category.id)}
-                         onCheckedChange={() => toggleCategoryFilter(category.id)}
-                       />
-                       <Label htmlFor={`category-${category.id}`} className="cursor-pointer">
-                         {category.name}
-                       </Label>
-                     </div>
-                 
-                     {category.subcategories && category.subcategories.length > 0 && (
-                       <Button
-                         variant="ghost"
-                         size="sm"
-                         className="h-8 w-8 p-0"
-                         onClick={() => toggleCategory(category.id)}
-                       >
-                         <ChevronDown
-                           className={cn(
-                             "h-4 w-4 transform transition-transform duration-200",
-                             expandedCategories[category.id] && "rotate-180"
-                           )}
-                         />
-                       </Button>
-                     )}
-                   </div>
-                 
-                   {category.subcategories && expandedCategories[category.id] && (
-                     <div className="ml-6 space-y-1">
-                       {category.subcategories.map((subcategory) => (
-                         <div key={subcategory.id} className="flex items-center space-x-2">
-                           <Checkbox
-                             id={`subcategory-${subcategory.id}`}
-                             checked={selectedSubcategories.includes(subcategory.id)}
-                             onCheckedChange={() => toggleSubcategoryFilter(subcategory.id)}
-                           />
-                           <Label htmlFor={`subcategory-${subcategory.id}`} className="cursor-pointer">
-                             {subcategory.name}
-                           </Label>
-                         </div>
-                       ))}
-                     </div>
-                   )}
-                 </div>
-                 
-                  ))}
-                </div>
+            <div className="rounded-md border shadow-sm bg-white mb-6">
+              <div className="border-b px-3 py-3 bg-primary text-white text-sm font-semibold flex justify-between items-center gap-2">
+               Categorias 
+               <ListFilter className="text-2xl"/>
+              </div>
+
+              <div className="flex flex-col">
+                {categories.map((category) => {
+                  const isActive = selectedCategories.includes(category.id)
+                  const isExpanded = expandedCategories[category.id]
+
+                  return (
+                    <div key={category.id} className="border-b">
+                      {/* Categoria principal */}
+                      <div className="flex justify-between items-center w-full px-4 py-2 text-sm transition cursor-pointer">
+                        <span
+                          onClick={() => toggleCategoryFilter(category.id)}
+                          className={cn(
+                            "flex-1 text-left hover:text-primary",
+                            isActive ? "text-primary font-semibold" : "text-muted-foreground"
+                          )}
+                        >
+                          {category.name}
+                        </span>
+
+                        {category.subcategories && category.subcategories.length > 0 && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleCategory(category.id)
+                            }}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 transform transition-transform",
+                                isExpanded && "rotate-180"
+                              )}
+                            />
+                          </button>
+                        )}
+                      </div>
+
+
+                      {/* Subcategorias (dropdown) */}
+                      {category.subcategories && isExpanded && (
+                        <div className=" py-2 space-y-1">
+                          {category.subcategories.map((subcategory) => {
+                            const isSubActive = selectedSubcategories.includes(subcategory.id)
+                            return (
+                              <button
+                                key={subcategory.id}
+                                onClick={() => toggleSubcategoryFilter(subcategory.id)}
+                                className={cn(
+                                  "w-full text-left text-sm px-5 py-1 transition hover:text-primary",
+                                  isSubActive
+                                    ? "bg-primary/20 text-primary font-medium"
+                                    : "hover:bg-muted text-muted-foreground"
+                                )}
+                              >
+                                {subcategory.name}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
+
+
 
             {/* Lista de produtos */}
             <div className="md:col-span-3">
