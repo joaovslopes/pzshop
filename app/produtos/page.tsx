@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { ChevronDown, ChevronUp, Filter } from "lucide-react"
 import { useTranslation } from "@/hooks/use-translation"
 import axios from "axios"
+import { cn } from "@/lib/utils"
+
 
 interface Product {
   id: string
@@ -54,12 +56,11 @@ export default function ProdutosPage() {
           const data = response.data.data.map((cat: any) => ({
             id: cat._id,
             name: cat.name,
-            subcategories: (cat.subcategories || []).map((sub: string, i: number) => ({
-              id: `${cat._id}-${i}`,
+            subcategories: (cat.subcategories || []).map((sub: string) => ({
+              id: sub, // ← usa o nome da subcategoria como ID
               name: sub
             }))
           }))
-
           setCategories(data)
 
           const expanded: Record<string, boolean> = {}
@@ -91,7 +92,8 @@ export default function ProdutosPage() {
               : `https://apisite.pzdev.com.br${product.image}`,
             video: product.videoUrl,
             isLauncher: product.isLauncher || false,
-            categoryId: product.category?._id || null
+            categoryId: product.category || null, // ← Pega o ID direto
+            subcategory: product.subcategory || null,
           }))
 
           setProducts(data)
@@ -137,23 +139,17 @@ export default function ProdutosPage() {
   }
 
   const filteredProducts = products.filter((product) => {
-    // Se não há filtros selecionados, mostrar todos os produtos
-    if (selectedCategories.length === 0 && selectedSubcategories.length === 0) {
-      return true
-    }
-
-    // Filtrar por categoria
-    if (selectedCategories.length > 0 && product.categoryId) {
-      return selectedCategories.includes(product.categoryId)
-    }
-
-    // Filtrar por subcategoria (simplificado, em um caso real precisaria de mais lógica)
-    if (selectedSubcategories.length > 0) {
-      return true // Simplificado para o exemplo
-    }
-
-    return false
+    const matchCategory =
+      selectedCategories.length === 0 || selectedCategories.includes(product.categoryId)
+  
+    const matchSubcategory =
+      selectedSubcategories.length === 0 || selectedSubcategories.includes(product.subcategory)
+  
+    return matchCategory && matchSubcategory
   })
+  
+  
+  
 
   return (
     <>
@@ -188,51 +184,54 @@ export default function ProdutosPage() {
                 <h2 className="font-semibold text-lg mb-4">Categorias</h2>
                 <div className="space-y-4">
                   {categories.map((category) => (
-                    <div key={category.id} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`category-${category.id}`}
-                            checked={selectedCategories.includes(category.id)}
-                            onCheckedChange={() => toggleCategoryFilter(category.id)}
-                          />
-                          <Label htmlFor={`category-${category.id}`} className="cursor-pointer">
-                            {category.name}
-                          </Label>
-                        </div>
-                        {category.subcategories && category.subcategories.length > 0 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => toggleCategory(category.id)}
-                          >
-                            {expandedCategories[category.id] ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            )}
-                          </Button>
-                        )}
-                      </div>
-
-                      {category.subcategories && expandedCategories[category.id] && (
-                        <div className="ml-6 space-y-1">
-                          {category.subcategories.map((subcategory) => (
-                            <div key={subcategory.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`subcategory-${subcategory.id}`}
-                                checked={selectedSubcategories.includes(subcategory.id)}
-                                onCheckedChange={() => toggleSubcategoryFilter(subcategory.id)}
-                              />
-                              <Label htmlFor={`subcategory-${subcategory.id}`} className="cursor-pointer">
-                                {subcategory.name}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                   <div key={category.id} className="space-y-2">
+                   <div className="flex items-center justify-between">
+                     <div className="flex items-center space-x-2">
+                       <Checkbox
+                         id={`category-${category.id}`}
+                         checked={selectedCategories.includes(category.id)}
+                         onCheckedChange={() => toggleCategoryFilter(category.id)}
+                       />
+                       <Label htmlFor={`category-${category.id}`} className="cursor-pointer">
+                         {category.name}
+                       </Label>
+                     </div>
+                 
+                     {category.subcategories && category.subcategories.length > 0 && (
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         className="h-8 w-8 p-0"
+                         onClick={() => toggleCategory(category.id)}
+                       >
+                         <ChevronDown
+                           className={cn(
+                             "h-4 w-4 transform transition-transform duration-200",
+                             expandedCategories[category.id] && "rotate-180"
+                           )}
+                         />
+                       </Button>
+                     )}
+                   </div>
+                 
+                   {category.subcategories && expandedCategories[category.id] && (
+                     <div className="ml-6 space-y-1">
+                       {category.subcategories.map((subcategory) => (
+                         <div key={subcategory.id} className="flex items-center space-x-2">
+                           <Checkbox
+                             id={`subcategory-${subcategory.id}`}
+                             checked={selectedSubcategories.includes(subcategory.id)}
+                             onCheckedChange={() => toggleSubcategoryFilter(subcategory.id)}
+                           />
+                           <Label htmlFor={`subcategory-${subcategory.id}`} className="cursor-pointer">
+                             {subcategory.name}
+                           </Label>
+                         </div>
+                       ))}
+                     </div>
+                   )}
+                 </div>
+                 
                   ))}
                 </div>
               </div>
