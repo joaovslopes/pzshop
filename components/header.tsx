@@ -38,7 +38,7 @@ export function Header() {
 
 
   return (
-    <header className="sticky top-0 z-50 w-full  bg-[#070707] text-white">
+    <header className="sticky top-0 z-50 w-full border-b bg-[#070707] text-white">
       <div className="container flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <Image src={Logo} width={130} alt="logo" />
