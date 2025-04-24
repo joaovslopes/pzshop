@@ -106,12 +106,18 @@ export default function ProdutosPage() {
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const matchCategory =
-        selectedCategories.length === 0 || selectedCategories.includes(product.categoryId || "")
+        selectedCategories.length === 0 || selectedCategories.includes(product.categoryId || "");
+  
       const matchSubcategory =
-        selectedSubcategories.length === 0 || selectedSubcategories.includes(product.subcategory || "")
-      return matchCategory && matchSubcategory
-    })
-  }, [products, selectedCategories, selectedSubcategories])
+        selectedSubcategories.length === 0 ||
+        (Array.isArray(product.subcategory)
+          ? product.subcategory.some(sub => selectedSubcategories.includes(sub))
+          : selectedSubcategories.includes(product.subcategory || ""));
+  
+      return matchCategory && matchSubcategory;
+    });
+  }, [products, selectedCategories, selectedSubcategories]);
+  
 
   return (
     <>
