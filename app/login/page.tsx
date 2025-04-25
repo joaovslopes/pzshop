@@ -62,7 +62,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-gradient-to-b from-primary/10 to-background">
+    <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-custom-bg bg-cover h-screen">
       <Card className="w-full max-w-md rounded-2xl shadow-lg">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Entrar na sua conta</CardTitle>
@@ -113,6 +113,9 @@ export default function LoginPage() {
               Cadastre-se
             </Link>
           </div>
+          <Link href="/" className="text-sm hover:text-primary">
+            Voltar para Home
+          </Link>
         </CardFooter>
       </Card>
     </div>

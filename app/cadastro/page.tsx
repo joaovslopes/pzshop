@@ -57,7 +57,7 @@ export default function CadastroPage() {
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-gradient-to-b from-primary/10 to-background">
+    <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-custom-bg bg-cover h-screen">
       <Card className="w-full max-w-md rounded-2xl shadow-lg">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Criar uma conta</CardTitle>
@@ -109,12 +109,15 @@ export default function CadastroPage() {
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
-          <div className="text-center text-sm">
+          <div className="text-center text-sm ">
             Já possui uma conta?{" "}
             <Link href="/login" className="text-primary hover:underline">
               Faça login
             </Link>
           </div>
+          <Link href="/" className="text-sm hover:text-primary">
+            Voltar para Home
+          </Link>
         </CardFooter>
       </Card>
     </div>
