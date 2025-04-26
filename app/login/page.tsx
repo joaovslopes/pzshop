@@ -39,7 +39,7 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      const API = "http://localhost:5005/api"
+      const API = "https://apisite.pzdev.com.br/api"
       const resp = await axios.post(`${API}/users/login`, formData)
       const { success, token, message } = resp.data
 
@@ -51,7 +51,7 @@ export default function LoginPage() {
 
       // guarda o JWT e entra no dashboard
       localStorage.setItem("token", token)
-      toast.success("Login realizado! Seja bem-vindo 😉")
+      toast.success("Login realizado!")
       router.push("/dashboard")
     } catch (err: any) {
       console.error(err)
