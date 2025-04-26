@@ -2,6 +2,8 @@ const translations = {
   pt: {
     common: {
       home: "Início",
+      dashboard: "Painel",
+      logout: "Sair",
       products: "Produtos",
       contact: "Contato",
       login: "Entrar",
@@ -158,6 +160,8 @@ const translations = {
   en: {
     common: {
       home: "Home",
+      dashboard: "Dashboard",
+      logout: "Logout",
       products: "Products",
       contact: "Contact",
       login: "Login",
@@ -314,6 +318,8 @@ const translations = {
   es: {
     common: {
       home: "Inicio",
+      dashboard: "Panel",
+      logout: "Salir",
       products: "Productos",
       contact: "Contacto",
       login: "Iniciar Sesión",

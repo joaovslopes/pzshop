@@ -1,24 +1,34 @@
+// app/login/page.tsx
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
+import React, { useEffect, useState } from "react"
+import axios from "axios"
+import { toast } from "react-toastify"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
 export default function LoginPage() {
-  const { toast } = useToast()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  })
+  const [formData, setFormData] = useState({ email: "", password: "" })
+
+  // Se já estiver logado, redireciona direto
+  useEffect(() => {
+    if (localStorage.getItem("token")) {
+      router.replace("/dashboard")
+    }
+  }, [router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -27,46 +37,43 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
+    setLoading(true)
     try {
-      setLoading(true)
+      const API = "http://localhost:5005/api"
+      const resp = await axios.post(`${API}/users/login`, formData)
+      const { success, token, message } = resp.data
 
-      // Simulação de login
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      if (!success) {
+        toast.error(message || "Email ou senha incorretos.")
+        setLoading(false)
+        return
+      }
 
-      // Simulando token JWT
-      localStorage.setItem(
-        "token",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvYW8gU2lsdmEiLCJlbWFpbCI6ImpvYW8uc2lsdmFAZXhlbXBsby5jb20iLCJpYXQiOjE1MTYyMzkwMjJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+      // guarda o JWT e entra no dashboard
+      localStorage.setItem("token", token)
+      toast.success("Login realizado! Seja bem-vindo 😉")
+      router.push("/dashboard")
+    } catch (err: any) {
+      console.error(err)
+      toast.error(
+        err.response?.data?.message ||
+          "Erro na conexão. Tente novamente mais tarde."
       )
-
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Você será redirecionado para o dashboard.",
-      })
-
-      // Redirecionar para o dashboard após login bem-sucedido
-      setTimeout(() => {
-        router.push("/dashboard")
-      }, 1000)
-    } catch (error) {
-      console.error(error)
-      toast({
-        variant: "destructive",
-        title: "Erro no login",
-        description: error instanceof Error ? error.message : "Credenciais inválidas. Tente novamente.",
-      })
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-custom-bg bg-cover h-screen">
+    <div className="flex-1 flex items-center justify-center p-4 bg-custom-bg bg-cover h-screen">
       <Card className="w-full max-w-md rounded-2xl shadow-lg">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Entrar na sua conta</CardTitle>
-          <CardDescription className="text-center">Digite seu email e senha para acessar</CardDescription>
+          <CardTitle className="text-2xl font-bold text-center">
+            Entrar na sua conta
+          </CardTitle>
+          <CardDescription className="text-center">
+            Use seu email e senha para acessar
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -76,7 +83,6 @@ export default function LoginPage() {
                 id="email"
                 name="email"
                 type="email"
-                placeholder="seu@email.com"
                 required
                 value={formData.email}
                 onChange={handleChange}
@@ -89,7 +95,6 @@ export default function LoginPage() {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="Sua senha"
                 required
                 value={formData.password}
                 onChange={handleChange}
@@ -97,18 +102,25 @@ export default function LoginPage() {
               />
             </div>
             <div className="text-right">
-              <Link href="/esqueci-senha" className="text-sm text-primary hover:underline">
+              <Link
+                href="/esqueci-senha"
+                className="text-sm text-primary hover:underline"
+              >
                 Esqueceu sua senha?
               </Link>
             </div>
-            <Button type="submit" className="w-full rounded-xl" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full rounded-xl"
+              disabled={loading}
+            >
               {loading ? "Entrando..." : "Entrar"}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
           <div className="text-center text-sm">
-            Não possui uma conta?{" "}
+            Não tem conta?{" "}
             <Link href="/cadastro" className="text-primary hover:underline">
               Cadastre-se
             </Link>
