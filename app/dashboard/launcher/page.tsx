@@ -17,7 +17,7 @@ interface License {
   dashboard: "active" | "disabled";
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://apisite.pzdev.com.br";
 
 export default function LauncherPage() {
   const [licenses, setLicenses] = useState<License[]>([]);
@@ -116,7 +116,7 @@ export default function LauncherPage() {
 
       {loading ? (
         <div className="flex justify-center p-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
+          <div className="animate-ping rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" />
         </div>
       ) : licenses.length === 0 ? (
         <Card className="rounded-2xl">

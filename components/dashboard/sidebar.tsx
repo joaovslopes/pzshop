@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Image from "next/image"
-import Logo from "../../public/logo-extensa-preta.png"
+import Logo from "../../public/logo-extensa.png"
 import { cn } from "@/lib/utils"
 
 interface UserProps {
@@ -37,7 +37,7 @@ interface UserProps {
   avatar?: string
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5005"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://apisite.pzdev.com.br"
 
 export function DashboardSidebar() {
   const pathname = usePathname()
@@ -111,19 +111,19 @@ export function DashboardSidebar() {
   const menuItems = [
     { title: "Início", icon: Home, href: "/dashboard" },
     { title: "PZ Launcher", icon: LayoutDashboardIcon, href: "/dashboard/launcher" },
-    { title: "PZ Scripts", icon: Code, href: "/dashboard/scripts" },
+    //{ title: "PZ Scripts", icon: Code, href: "/dashboard/scripts" },
     { title: "Loja", icon: ShoppingBagIcon, href: "/dashboard/loja" },
   ]
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b bg-white">
+      <SidebarHeader className="border-b ">
         <Link href="/" className="flex items-center justify-center gap-2">
-          <Image src={Logo} width={250} alt="logo" />
+          <Image src={Logo} width={150} alt="logo" />
         </Link>
       </SidebarHeader>
 
-      <SidebarContent className="bg-white py-6 px-4">
+      <SidebarContent className="py-6 px-4">
         <SidebarMenu>
           {menuItems.map((item) => {
             const isActive = pathname === item.href
@@ -147,7 +147,7 @@ export function DashboardSidebar() {
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="border-t p-4 bg-white">
+      <SidebarFooter className="border-t p-4">
         {loadingUser ? (
           <div className="text-center text-sm text-muted-foreground">Carregando perfil…</div>
         ) : userError ? (

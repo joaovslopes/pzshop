@@ -45,12 +45,12 @@ export default function DashboardPage() {
     if (!token) return;
 
     // Fetch user data plus licenses
-    const fetchUser = fetch("http://localhost:5005/api/users/me", {
+    const fetchUser = fetch("https://apisite.pzdev.com.br/api/users/me", {
       headers: { Authorization: `Bearer ${token}` },
     }).then(res => res.json());
 
     // Fetch counts (launcher + scripts)
-    const fetchCounts = fetch("http://localhost:5005/api/users/counts", {
+    const fetchCounts = fetch("https://apisite.pzdev.com.br/api/users/counts", {
       headers: { Authorization: `Bearer ${token}` },
     }).then(res => res.json());
 
@@ -62,7 +62,7 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p>Carregando dashboard…</p>;
+  if (loading) return ;
   if (!user || !counts)
     return <p>Não foi possível carregar os dados do dashboard.</p>;
 

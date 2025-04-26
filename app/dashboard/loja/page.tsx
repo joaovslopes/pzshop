@@ -1,154 +1,310 @@
-"use client"
+// app/dashboard/loja/page.tsx
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { ShoppingCart } from "lucide-react"
-import Image from "next/image"
-import { BuyLauncherModal } from "@/components/buy-launcher-modal"
+import React, { useEffect, useState, useMemo } from "react";
+import { ProductCard } from "@/components/product-card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp, ListFilter } from "lucide-react";
+import axios from "axios";
+import useSWR from "swr";
+import { cn } from "@/lib/utils";
 
 interface Product {
-  id: string
-  name: string
-  description: string
-  price: number
-  image?: string
-  video?: string
-  isLauncher?: boolean
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  tag: string;
+  image?: string;
+  video?: string;
+  isLauncher?: boolean;
+  categoryId?: string;
+  subcategory?: string | string[];
 }
 
+interface Category {
+  id: string;
+  name: string;
+  subcategories?: Subcategory[];
+}
+
+interface Subcategory {
+  id: string;
+  name: string;
+}
+
+const fetcher = (url: string) => axios.get(url).then((res) => res.data.data);
+
 export default function StorePage() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [expandedCategories, setExpandedCategories] = useState<
+    Record<string, boolean>
+  >({});
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedSubcategories, setSelectedSubcategories] = useState<
+    string[]
+  >([]);
+  const [showFilters, setShowFilters] = useState(false);
 
+  const {
+    data: categoriesData,
+    isLoading: loadingCategories,
+  } = useSWR("https://apisite.pzdev.com.br/api/category", fetcher);
+  const {
+    data: productsData,
+    isLoading: loadingProducts,
+    error: errorProducts,
+  } = useSWR("https://apisite.pzdev.com.br/api/products", fetcher);
+
+  // parse categories
+  const categories: Category[] = useMemo(() => {
+    if (!categoriesData) return [];
+    return categoriesData.map((cat: any) => ({
+      id: cat._id,
+      name: cat.name,
+      subcategories: (cat.subcategories || []).map((sub: string) => ({
+        id: sub,
+        name: sub,
+      })),
+    }));
+  }, [categoriesData]);
+
+  // initialize expanded state once
   useEffect(() => {
-    // Simulando carregamento de produtos da API
-    const fetchProducts = async () => {
-      try {
-        // Aqui você faria uma requisição para a API
-        // const response = await fetch('/api/products')
-        // const data = await response.json()
-        // setProducts(data)
+    const exp: Record<string, boolean> = {};
+    categories.forEach((cat) => {
+      exp[cat.id] = true;
+    });
+    setExpandedCategories(exp);
+  }, [categories]);
 
-        // Simulando dados
-        setTimeout(() => {
-          setProducts([
-            {
-              id: "1",
-              name: "PZ Launcher Premium",
-              description:
-                "Um launcher completo para seu servidor MU Online com recursos avançados de personalização, atualizações automáticas e proteção contra hacks.",
-              price: 299.9,
-              image: "/placeholder.svg?height=200&width=400",
-              isLauncher: true,
-            },
-            {
-              id: "2",
-              name: "PZ Scripts Pack",
-              description:
-                "Pacote completo de scripts otimizados para servidores MU Online, incluindo sistemas de eventos, rankings, loja virtual e muito mais.",
-              price: 499.9,
-              image: "/placeholder.svg?height=200&width=400",
-            },
-            {
-              id: "3",
-              name: "PZ Admin Dashboard",
-              description:
-                "Painel administrativo completo para gerenciar seu servidor MU Online com estatísticas em tempo real, gerenciamento de usuários e configurações avançadas.",
-              price: 399.9,
-              image: "/placeholder.svg?height=200&width=400",
-            },
-            {
-              id: "4",
-              name: "PZ Anti-Hack Solution",
-              description:
-                "Sistema avançado de proteção contra hacks e cheats para seu servidor MU Online, garantindo uma experiência justa para todos os jogadores.",
-              price: 349.9,
-              image: "/placeholder.svg?height=200&width=400",
-            },
-          ])
-          setLoading(false)
-        }, 1000)
-      } catch (error) {
-        console.error("Erro ao carregar produtos:", error)
-        setLoading(false)
-      }
-    }
+  // parse products
+  const products: Product[] = useMemo(() => {
+    if (!productsData) return [];
+    return productsData.map((p: any) => ({
+      id: p._id,
+      name: p.name,
+      tag: p.tag,
+      description: p.description,
+      price: p.price ?? 0,
+      image: p.image?.startsWith("http")
+        ? p.image
+        : `https://apisite.pzdev.com.br${p.image}`,
+      video: p.videoUrl,
+      isLauncher: p.isLauncher ?? false,
+      categoryId: p.category ?? null,
+      subcategory: p.subcategory ?? null,
+    }));
+  }, [productsData]);
 
-    fetchProducts()
-  }, [])
+  const toggleCategory = (id: string) =>
+    setExpandedCategories((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleCategoryFilter = (id: string) =>
+    setSelectedCategories((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  const toggleSubcategoryFilter = (id: string) =>
+    setSelectedSubcategories((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
 
-  const handleBuyClick = (product: Product) => {
-    if (product.isLauncher) {
-      setSelectedProduct(product)
-      setIsModalOpen(true)
-    } else {
-      // Simulação de compra direta para produtos que não são launchers
-      console.log("Comprando produto:", product.id)
-      // Aqui você faria o fetch para POST /api/buy/product
-    }
-  }
+    const filteredProducts = useMemo(() => {
+      return products.filter((prod) => {
+        // filtro de categoria
+        if (
+          selectedCategories.length > 0 &&
+          !selectedCategories.includes(prod.categoryId || "")
+        ) {
+          return false;
+        }
+    
+        // filtro de subcategoria (string ou array)
+        if (selectedSubcategories.length > 0) {
+          const prodSubs = Array.isArray(prod.subcategory)
+            ? prod.subcategory
+            : prod.subcategory
+            ? [prod.subcategory]
+            : [];
+    
+          // se nenhuma sub se encaixar, exclui
+          if (!prodSubs.some((sub) => selectedSubcategories.includes(sub))) {
+            return false;
+          }
+        }
+    
+        return true;
+      });
+    }, [products, selectedCategories, selectedSubcategories]);
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Loja</h1>
-        <p className="text-muted-foreground mt-2">Adquira novos produtos para seu servidor</p>
-      </div>
+    <>
+      <div className="">
+        <div className="flex flex-col gap-6">
+          {/* Title */}
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold">Loja</h1>
+            <p className="text-muted-foreground mt-2">
+              Encontre os melhores scripts e launchers para seu servidor MU
+              Online
+            </p>
+          </div>
 
-      {loading ? (
-        <div className="flex justify-center p-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
-      ) : products.length === 0 ? (
-        <Card className="rounded-2xl">
-          <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground">Nenhum produto disponível no momento</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {products.map((product) => (
-            <Card key={product.id} className="rounded-2xl overflow-hidden">
-              <div className="aspect-video w-full overflow-hidden">
-                {product.image && (
-                  <Image
-                    src={product.image || "/placeholder.svg"}
-                    alt={product.name}
-                    width={400}
-                    height={200}
-                    className="w-full h-full object-cover"
-                  />
-                )}
-              </div>
-              <CardHeader>
-                <CardTitle>{product.name}</CardTitle>
-                <CardDescription>{product.description}</CardDescription>
-              </CardHeader>
-              <CardFooter className="flex justify-between items-center">
-                <div className="text-2xl font-bold">
-                  {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(product.price)}
+          {/* Mobile filter toggle */}
+          <div className="md:hidden">
+            <Button
+              variant="outline"
+              className="w-full flex items-center justify-between"
+              onClick={() => setShowFilters((v) => !v)}
+            >
+              <span className="flex items-center">
+                <ListFilter className="mr-2 h-4 w-4" />
+                {showFilters ? "Fechar Filtros" : "Abrir Filtros"}
+              </span>
+              {showFilters ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* Filters */}
+            <div
+              className={cn(
+                "md:col-span-1",
+                showFilters ? "block" : "hidden",
+                "md:block"
+              )}
+            >
+              <div className="sticky top-24 h-fit rounded-md border shadow-sm bg-white mb-6">
+                <div className="border-b px-3 py-3 bg-primary text-white text-sm font-semibold flex justify-between items-center gap-2">
+                  Categorias
+                  <ListFilter className="text-2xl" />
                 </div>
-                <Button className="rounded-xl" onClick={() => handleBuyClick(product)}>
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Comprar
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      )}
+                <div className="flex flex-col">
+                  {categories.map((cat) => {
+                    const isActive = selectedCategories.includes(cat.id);
+                    const isExp = expandedCategories[cat.id];
+                    return (
+                      <div key={cat.id} className="border-b">
+                        <div className="flex justify-between items-center px-4 py-2 cursor-pointer">
+                          <span
+                            onClick={() => toggleCategoryFilter(cat.id)}
+                            className={cn(
+                              "flex-1 hover:text-primary",
+                              isActive
+                                ? "text-primary font-semibold"
+                                : "text-muted-foreground"
+                            )}
+                          >
+                            {cat.name}
+                          </span>
+                          {cat.subcategories?.length > 0 && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleCategory(cat.id);
+                              }}
+                              className="text-muted-foreground hover:text-foreground"
+                            >
+                              <ChevronDown
+                                className={cn(
+                                  "h-4 w-4 transform transition-transform",
+                                  isExp && "rotate-180"
+                                )}
+                              />
+                            </button>
+                          )}
+                        </div>
+                        {cat.subcategories && isExp && (
+                          <div className="py-2 space-y-1">
+                            {cat.subcategories.map((sub) => {
+                              const subActive = selectedSubcategories.includes(
+                                sub.id
+                              );
+                              return (
+                                <button
+                                  key={sub.id}
+                                  onClick={() =>
+                                    toggleSubcategoryFilter(sub.id)
+                                  }
+                                  className={cn(
+                                    "w-full text-left text-sm px-5 py-1 hover:text-primary",
+                                    subActive
+                                      ? "bg-primary/20 text-primary font-medium"
+                                      : "hover:bg-muted text-muted-foreground"
+                                  )}
+                                >
+                                  {sub.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
 
-      {selectedProduct && (
-        <BuyLauncherModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          productId={selectedProduct.id}
-          productName={selectedProduct.name}
-        />
-      )}
-    </div>
-  )
+            {/* Product grid */}
+            <div className="md:col-span-3">
+              {(loadingProducts || loadingCategories) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className="rounded-2xl border bg-card text-card-foreground shadow-sm overflow-hidden"
+                    >
+                      <Skeleton className="h-48 w-full" />
+                      <div className="p-6 space-y-4">
+                        <Skeleton className="h-8 w-3/4" />
+                        <Skeleton className="h-24 w-full" />
+                        <div className="flex justify-end">
+                          <Skeleton className="h-10 w-32" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {errorProducts && (
+                <div className="text-center p-8 rounded-2xl border border-destructive/20 bg-destructive/5">
+                  <p className="text-destructive">
+                    Erro ao carregar produtos. Tente novamente mais tarde.
+                  </p>
+                </div>
+              )}
+
+              {!loadingProducts &&
+                !errorProducts &&
+                filteredProducts.length === 0 && (
+                  <div className="text-center p-8 rounded-2xl border">
+                    <p className="text-muted-foreground">
+                      Nenhum produto encontrado com os filtros selecionados
+                    </p>
+                  </div>
+                )}
+
+              {!loadingProducts &&
+                !errorProducts &&
+                filteredProducts.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {filteredProducts.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                      />
+                    ))}
+                  </div>
+                )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }
