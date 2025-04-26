@@ -1,67 +1,103 @@
-"use client"
+// app/cadastro/page.tsx
+"use client";
 
-import type React from "react"
+import React, { useState } from "react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Link from "next/link";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
+const API_URL = "https://apisite.pzdev.com.br";
+
+// dynamically load ToastContainer on client only
+const ToastContainer = dynamic(
+  () =>
+    import("react-toastify").then((mod) => {
+      return mod.ToastContainer;
+    }),
+  { ssr: false }
+);
 
 export default function CadastroPage() {
-  const { toast } = useToast()
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
-  })
+  });
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleConfirmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setConfirmPassword(e.target.value);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+    if (formData.password !== confirmPassword) {
+      toast.error("As senhas não coincidem.");
+      return;
+    }
+    setLoading(true);
 
     try {
-      setLoading(true)
+      const res = await fetch(`${API_URL}/api/users/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const jr = await res.json();
 
-      // Simulação de cadastro
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      if (!res.ok) {
+        const msg =
+          jr.message === "Email já cadastrado."
+            ? "Este email já está em uso."
+            : jr.message || "Falha no cadastro.";
+        toast.error(msg);
+        return;
+      }
 
-      toast({
-        title: "Cadastro realizado com sucesso!",
-        description: "Você será redirecionado para a página de login.",
-      })
-
-      // Redirecionar para login após cadastro bem-sucedido
-      setTimeout(() => {
-        router.push("/login")
-      }, 2000)
-    } catch (error) {
-      console.error(error)
-      toast({
-        variant: "destructive",
-        title: "Erro no cadastro",
-        description: error instanceof Error ? error.message : "Ocorreu um erro ao cadastrar. Tente novamente.",
-      })
+      toast.success("Cadastro realizado! Redirecionando para login...");
+      setTimeout(() => router.push("/login"), 2000);
+    } catch (err) {
+      console.error("Erro no cadastro:", err);
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Ocorreu um erro. Tente novamente mais tarde."
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-custom-bg bg-cover h-screen">
+      <ToastContainer position="top-right" />
       <Card className="w-full max-w-md rounded-2xl shadow-lg">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Criar uma conta</CardTitle>
-          <CardDescription className="text-center">Preencha os campos abaixo para se cadastrar</CardDescription>
+          <CardTitle className="text-2xl font-bold text-center">
+            Criar uma conta
+          </CardTitle>
+          <CardDescription className="text-center">
+            Preencha os campos abaixo para se cadastrar
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -103,13 +139,30 @@ export default function CadastroPage() {
                 className="rounded-xl"
               />
             </div>
-            <Button type="submit" className="w-full rounded-xl" disabled={loading}>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Repetir Senha</Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                placeholder="Repita sua senha"
+                required
+                value={confirmPassword}
+                onChange={handleConfirmChange}
+                className="rounded-xl"
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full rounded-xl"
+              disabled={loading}
+            >
               {loading ? "Cadastrando..." : "Cadastrar"}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
-          <div className="text-center text-sm ">
+          <div className="text-center text-sm">
             Já possui uma conta?{" "}
             <Link href="/login" className="text-primary hover:underline">
               Faça login
@@ -121,5 +174,5 @@ export default function CadastroPage() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }
