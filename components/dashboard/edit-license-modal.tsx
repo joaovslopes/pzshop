@@ -1,11 +1,9 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -13,90 +11,126 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 
 interface License {
-  id: string
-  token: string
-  domain: string
-  expirationDate: string
-  status: "active" | "expired"
-  downloader: "active" | "disabled"
-  dashboard: "active" | "disabled"
+  _id: string;
+  token: string;
+  domain: string;
+  expirationDate: string;
+  themeUrl: string;
+  updateUrl: string;
+  downloader: "active" | "disabled";
+  dashboard: "active" | "disabled";
 }
 
 interface EditLicenseModalProps {
-  license: License
-  isOpen: boolean
-  onClose: () => void
-  onSave: (license: Partial<License>) => void
+  license: License;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (updated: { themeUrl: string; updateUrl: string }) => void;
 }
 
-export function EditLicenseModal({ license, isOpen, onClose, onSave }: EditLicenseModalProps) {
+export function EditLicenseModal({
+  license,
+  isOpen,
+  onClose,
+  onSave,
+}: EditLicenseModalProps) {
   const [formData, setFormData] = useState({
-    domain: license.domain,
     themeUrl: "",
     updateUrl: "",
-  })
+  });
+
+  // Quando o modal abre ou a license muda, pré-carrega os valores existentes
+  useEffect(() => {
+     setFormData({
+      themeUrl: license.themeUrl ?? "",
+      updateUrl: license.updateUrl ?? "",
+    });
+  }, [license]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+    console.log("[EditLicenseModal] submitting formData:", formData);
     onSave({
-      ...license,
-      domain: formData.domain,
-      // Outros campos que seriam enviados para a API
-    })
-  }
+      themeUrl: formData.themeUrl,
+      updateUrl: formData.updateUrl,
+    });
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px] rounded-2xl">
         <DialogHeader>
-          <DialogTitle>Edit License #{license.id}</DialogTitle>
-          <DialogDescription>Complete all the fields correctly</DialogDescription>
+          <DialogTitle>Editar Licença: {license.domain}</DialogTitle>
+          <DialogDescription>
+            Atualize os campos abaixo e clique em Salvar.
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="token">Token</Label>
-              <Input id="token" name="token" value={license.token} disabled className="rounded-xl" />
+              <Input
+                id="token"
+                name="token"
+                value={license.token}
+                disabled
+                className="rounded-xl"
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="domain">Domain</Label>
-              <Input id="domain" name="domain" value={formData.domain} onChange={handleChange} className="rounded-xl" />
+              <Input
+                id="domain"
+                name="domain"
+                value={license.domain}
+                disabled
+                className="rounded-xl bg-muted/20 cursor-not-allowed"
+              />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="themeUrl">Theme URL</Label>
               <Input
                 id="themeUrl"
                 name="themeUrl"
-                placeholder="theme.seudominio.com"
+                placeholder="https://theme.seudominio.com"
                 value={formData.themeUrl}
                 onChange={handleChange}
                 className="rounded-xl"
               />
-              <p className="text-xs text-muted-foreground">Sem http://</p>
+              <p className="text-xs text-muted-foreground">
+                Inclua o protocolo (https://)
+              </p>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="updateUrl">Update URL</Label>
               <Input
                 id="updateUrl"
                 name="updateUrl"
-                placeholder="update.seudominio.com"
+                placeholder="https://update.seudominio.com"
                 value={formData.updateUrl}
                 onChange={handleChange}
                 className="rounded-xl"
               />
-              <p className="text-xs text-muted-foreground">Sem http://</p>
+              <p className="text-xs text-muted-foreground">
+                Inclua o protocolo (https://)
+              </p>
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} className="rounded-xl">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="rounded-xl"
+            >
               Cancelar
             </Button>
             <Button type="submit" className="rounded-xl">
@@ -106,5 +140,5 @@ export function EditLicenseModal({ license, isOpen, onClose, onSave }: EditLicen
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
