@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Package, ShoppingCart, Code, Settings, LogOut, ChevronDown } from "lucide-react"
+import { Home, LayoutDashboardIcon, ShoppingBagIcon, Code, Settings, LogOut, ChevronDown } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -17,6 +17,9 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
+import Logo from "../../public/logo-extensa-preta.png"
+import { cn } from "@/lib/utils" // ou classnames/tailwind-merge
 
 interface UserProps {
   name: string
@@ -56,7 +59,7 @@ export function DashboardSidebar() {
     },
     {
       title: "PZ Launcher",
-      icon: Package,
+      icon: LayoutDashboardIcon,
       href: "/dashboard/launcher",
     },
     {
@@ -66,45 +69,52 @@ export function DashboardSidebar() {
     },
     {
       title: "Loja",
-      icon: ShoppingCart,
+      icon: ShoppingBagIcon,
       href: "/dashboard/loja",
     },
   ]
 
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b p-4">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="font-bold text-xl">PZ Store</span>
+    <Sidebar >
+      <SidebarHeader className="border-b bg-white">
+        <Link href="/" className="flex items-center justify-center gap-2">
+          <Image src={Logo} width={250} alt="logo" />
         </Link>
         <div className="md:hidden">
           <SidebarTrigger />
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="bg-white py-6 px-4">
         <SidebarMenu>
-          {menuItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton asChild isActive={pathname === item.href}>
-                <Link href={item.href}>
+          {menuItems.map((item) => {
+            const isActive = pathname === item.href
+            return (
+              <SidebarMenuItem key={item.href}>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ",
+                    isActive ? "hover:text-primary bg-primary/10 text-primary" : "text-muted-foreground"
+                  )}
+                >
                   <item.icon className="h-5 w-5" />
-                  <span>{item.title}</span>
+                  <span className="ml-2">{item.title}</span>
                 </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+              </SidebarMenuItem>
+            )
+          })}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="border-t p-4">
+      <SidebarFooter className="border-t p-4 bg-white">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-3 w-full rounded-xl p-2 hover:bg-muted transition-colors">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name}/>
                 <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="flex-1 overflow-hidden text-left">
-                <p className="text-sm font-medium truncate">{user.name}</p>
+                <p className="text-sm font-medium truncate text-primary">{user.name}</p>
                 <p className="text-xs text-muted-foreground truncate">{user.email}</p>
               </div>
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
