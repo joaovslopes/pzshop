@@ -144,6 +144,8 @@ const translations = {
       errorTitle: "Erro ao processar a compra",
       errorMessage: "Ocorreu um erro ao processar sua compra. Tente novamente.",
       domainRequired: "O domínio do servidor é obrigatório",
+      duplicateDomain: "Esse domínio já está sendo utilizado.",
+      checkingDomain: "Verificando domínio.",
     },
     editLicenseModal: {
       title: "Edit License #{id}",
@@ -302,6 +304,8 @@ const translations = {
       errorTitle: "Error processing purchase",
       errorMessage: "An error occurred while processing your purchase. Please try again.",
       domainRequired: "Server domain is required",
+      duplicateDomain: "Domain is being used",
+      checkingDomain: "Verify domain.",
     },
     editLicenseModal: {
       title: "Edit License #{id}",
@@ -460,6 +464,8 @@ const translations = {
       errorTitle: "Error al procesar la compra",
       errorMessage: "Ocurrió un error al procesar tu compra. Inténtalo de nuevo.",
       domainRequired: "El dominio del servidor es obligatorio",
+      duplicateDomain: "El dominio está siendo utilizado.",
+      checkingDomain: "Verificando domínio.",
     },
     editLicenseModal: {
       title: "Editar Licencia #{id}",

@@ -1,19 +1,17 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import axios from "axios"
+import { useState, useEffect, useRef } from "react"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { useTranslation } from "@/hooks/use-translation"
 
@@ -28,129 +26,136 @@ export function BuyLauncherModal({ isOpen, onClose, productId, productName }: Bu
   const { t } = useTranslation()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    domain: "",
-    themeUrl: "",
-    updateUrl: "",
-  })
+  const [formData, setFormData] = useState({ domain: "", themeUrl: "", updateUrl: "" })
+  const [license, setLicense] = useState<{ token: string; expirationDate: string } | null>(null)
+  const [domainExists, setDomainExists] = useState(false)
+  const [checkingDomain, setCheckingDomain] = useState(false)
+  const debounceRef = useRef<NodeJS.Timeout>()
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setFormData({ domain: "", themeUrl: "", updateUrl: "" })
+      setLoading(false)
+      setLicense(null)
+      setDomainExists(false)
+    }
+  }, [isOpen])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    setFormData(prev => ({ ...prev, [name]: value }))
+
+    // If editing domain, trigger check
+    if (name === "domain") {
+      setDomainExists(false)
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      if (!value) return
+      setCheckingDomain(true)
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const res = await axios.get("https://apisite.pzdev.com.br/api/launcher/check-domain", { params: { domain: value } })
+          setDomainExists(res.data.exists)
+        } catch {
+          // ignore errors
+        } finally {
+          setCheckingDomain(false)
+        }
+      }, 500)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (domainExists) {
+      toast({ variant: "destructive", title: t("buyModal.errorTitle"), description: t("buyModal.duplicateDomain", { domain: formData.domain }) })
+      return
+    }
+    if (!formData.domain || !formData.themeUrl || !formData.updateUrl) {
+      toast({ variant: "destructive", title: t("buyModal.errorTitle"), description: t("buyModal.fillAllFields") })
+      return
+    }
 
+    const token = localStorage.getItem("token")
+    if (!token) {
+      toast({ variant: "destructive", title: t("buyModal.errorTitle"), description: t("buyModal.notAuthenticated") })
+      return
+    }
+
+    setLoading(true)
     try {
-      setLoading(true)
-
-      // Validação básica
-      if (!formData.domain) {
-        throw new Error(t("buyModal.domainRequired"))
+      const res = await axios.post(
+        "https://apisite.pzdev.com.br/api/buy/license",
+        { domain: formData.domain, themeUrl: formData.themeUrl, updateUrl: formData.updateUrl },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      const lic = res.data.data
+      setLicense({ token: lic.token, expirationDate: lic.expirationDate })
+      toast({ title: t("buyModal.successTitle"), description: t("buyModal.successMessage") })
+    } catch (err: any) {
+      const resp = err.response
+      let message = t("buyModal.errorMessage")
+      if (resp) {
+        const text = resp.data?.message as string | undefined
+        if (resp.status === 400 && text?.includes("duplicate key")) {
+          message = t("buyModal.duplicateDomain", { domain: formData.domain })
+        } else if (text) {
+          message = text
+        }
       }
-
-      // Simulação de envio para API
-      // const response = await fetch("/api/buy/license", {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify({
-      //     productId,
-      //     ...formData
-      //   }),
-      // })
-
-      // if (!response.ok) {
-      //   throw new Error("Erro ao processar a compra")
-      // }
-
-      // Simulando sucesso
-      console.log("Compra processada:", { productId, ...formData })
-
-      toast({
-        title: t("buyModal.successTitle"),
-        description: t("buyModal.successMessage"),
-      })
-
-      onClose()
-    } catch (error) {
-      console.error(error)
-      toast({
-        variant: "destructive",
-        title: t("buyModal.errorTitle"),
-        description: error instanceof Error ? error.message : t("buyModal.errorMessage"),
-      })
+      toast({ variant: "destructive", title: t("buyModal.errorTitle"), description: message })
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px] rounded-2xl">
         <DialogHeader>
-          <DialogTitle>{t("buyModal.title", { product: productName })}</DialogTitle>
-          <DialogDescription>{t("buyModal.subtitle")}</DialogDescription>
+          <DialogTitle>{t("buyModal.title")}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
+
+        {license ? (
+          <div className="space-y-4">
+            <p className="break-all"><strong>{t("buyModal.tokenLabel")}:</strong> {license.token}</p>
+            <p><strong>{t("buyModal.expiryLabel")}:</strong> {new Date(license.expirationDate).toLocaleDateString("pt-BR")}</p>
+            <DialogFooter>
+              <Button onClick={onClose}>{t("buyModal.close")}</Button>
+            </DialogFooter>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-2">
               <Label htmlFor="domain">{t("buyModal.domain")}</Label>
               <Input
                 id="domain"
                 name="domain"
-                placeholder="seuservidor.com.br"
+                placeholder="exemplodelicenca.com"
                 value={formData.domain}
                 onChange={handleChange}
-                className="rounded-xl"
                 required
+                className="rounded-xl"
               />
+              {checkingDomain && <p className="text-xs text-muted-foreground">{t("buyModal.checkingDomain")}</p>}
+              {domainExists && !checkingDomain && <p className="text-xs text-destructive">{t("buyModal.duplicateDomain", { domain: formData.domain })}</p>}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="themeUrl">{t("buyModal.themeUrl")}</Label>
-              <Input
-                id="themeUrl"
-                name="themeUrl"
-                placeholder="theme.seuservidor.com.br"
-                value={formData.themeUrl}
-                onChange={handleChange}
-                className="rounded-xl"
-              />
+              <Input id="themeUrl" name="themeUrl" placeholder="theme.exemplodelicenca.com" value={formData.themeUrl} onChange={handleChange} required className="rounded-xl" />
               <p className="text-xs text-muted-foreground">{t("buyModal.withoutHttp")}</p>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="updateUrl">{t("buyModal.updateUrl")}</Label>
-              <Input
-                id="updateUrl"
-                name="updateUrl"
-                placeholder="update.seuservidor.com.br"
-                value={formData.updateUrl}
-                onChange={handleChange}
-                className="rounded-xl"
-              />
+              <Input id="updateUrl" name="updateUrl" placeholder="update.exemplodelicenca.com" value={formData.updateUrl} onChange={handleChange} required className="rounded-xl" />
               <p className="text-xs text-muted-foreground">{t("buyModal.withoutHttp")}</p>
             </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="rounded-xl border-[#ff8533] text-[#ff8533] hover:bg-[#ff8533] hover:text-white"
-            >
-              {t("buyModal.cancel")}
-            </Button>
-            <Button
-              type="submit"
-              className="rounded-xl bg-[#ff8533] hover:bg-[#ff8533]/90 text-white"
-              disabled={loading}
-            >
-              {loading ? t("buyModal.processing") : t("buyModal.confirm")}
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose} className="rounded-xl border-[#ff8533] text-[#ff8533] hover:bg-[#ff8533] hover:text-white">{t("buyModal.cancel")}</Button>
+              <Button type="submit" disabled={loading || domainExists} className="rounded-xl bg-[#ff8533] hover:bg-[#ff8533]/90 text-white">{loading ? t("buyModal.processing") : t("buyModal.confirm")}</Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   )
