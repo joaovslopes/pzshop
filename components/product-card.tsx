@@ -166,8 +166,8 @@ export function ProductCard({ product }: ProductCardProps) {
             {product.isLauncher
               ? t("common.buyNow")
               : alreadyOwned
-              ? "Já adquirido"
-              : t("common.buyNow")}
+                ? "Já adquirido"
+                : t("common.buyNow")}
             <ExternalLink className="ml-2 h-4 w-4" />
           </Button>
         </CardContent>
@@ -177,8 +177,8 @@ export function ProductCard({ product }: ProductCardProps) {
         <BuyLauncherModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+          userId={userId}            // <-- obrigatório agora
           productId={product._id}
-          productName={product.name}
         />
       )}
 

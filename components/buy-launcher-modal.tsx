@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +28,10 @@ export function BuyLauncherModal({ isOpen, onClose, userId, productId }: BuyLaun
     updateUrl: ""
   });
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [checkingDomain, setCheckingDomain] = useState(false);
+  const [domainExists, setDomainExists] = useState(false);
+
+  const debounceRef = useRef<NodeJS.Timeout>();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -36,6 +39,26 @@ export function BuyLauncherModal({ isOpen, onClose, userId, productId }: BuyLaun
       ...prev,
       [name]: value
     }));
+
+    // Se estiver digitando o domínio, checar
+    if (name === "domain") {
+      setDomainExists(false);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+
+      if (!value) return;
+
+      setCheckingDomain(true);
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const res = await axios.get("https://apisite.pzdev.com.br/api/launcher/check-domain", { params: { domain: value } });
+          setDomainExists(res.data.exists);
+        } catch {
+          // Pode ignorar erros de checagem
+        } finally {
+          setCheckingDomain(false);
+        }
+      }, 500);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,6 +66,11 @@ export function BuyLauncherModal({ isOpen, onClose, userId, productId }: BuyLaun
 
     if (!formData.domain || !formData.themeUrl || !formData.updateUrl) {
       toast.error("Preencha todos os campos.");
+      return;
+    }
+
+    if (domainExists) {
+      toast.error("Este domínio já está em uso. Escolha outro.");
       return;
     }
 
@@ -54,6 +82,14 @@ export function BuyLauncherModal({ isOpen, onClose, userId, productId }: BuyLaun
 
     setLoading(true);
     try {
+
+      console.log({
+        userId,
+        productId,
+        domain: formData.domain,
+        themeUrl: formData.themeUrl,
+        updateUrl: formData.updateUrl
+      });
       const response = await axios.post(
         "https://apisite.pzdev.com.br/api/payment/create-launcher",
         {
@@ -61,7 +97,7 @@ export function BuyLauncherModal({ isOpen, onClose, userId, productId }: BuyLaun
           productId,
           domain: formData.domain,
           themeUrl: formData.themeUrl,
-          updateUrl: formData.updateUrl,
+          updateUrl: formData.updateUrl
         },
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -69,7 +105,7 @@ export function BuyLauncherModal({ isOpen, onClose, userId, productId }: BuyLaun
       );
 
       if (response.data.success) {
-        window.location.href = response.data.init_point; // 🔥 Redireciona para checkout
+        window.location.href = response.data.init_point;
       } else {
         toast.error("Erro ao criar pagamento.");
       }
@@ -81,7 +117,6 @@ export function BuyLauncherModal({ isOpen, onClose, userId, productId }: BuyLaun
     }
   };
 
-
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px] rounded-2xl">
@@ -89,61 +124,62 @@ export function BuyLauncherModal({ isOpen, onClose, userId, productId }: BuyLaun
           <DialogTitle>Configure seu Launcher</DialogTitle>
         </DialogHeader>
 
-        {success ? (
-          <div className="space-y-4 text-center">
-            <h2 className="text-xl font-semibold text-green-600">Licença criada com sucesso!</h2>
-            <p className="text-muted-foreground text-sm">Agora seu launcher está pronto para uso.</p>
-            <DialogFooter>
-              <Button onClick={onClose} className="w-full">
-                Fechar
-              </Button>
-            </DialogFooter>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid gap-2">
+            <Label htmlFor="domain">Domínio</Label>
+            <Input
+              id="domain"
+              name="domain"
+              placeholder="exemplo.com.br"
+              value={formData.domain}
+              onChange={handleChange}
+              required
+              className="rounded-xl"
+            />
+            {checkingDomain && (
+              <p className="text-xs text-muted-foreground">Verificando domínio...</p>
+            )}
+            {domainExists && !checkingDomain && (
+              <p className="text-xs text-destructive">Este domínio já está em uso.</p>
+            )}
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid gap-2">
-              <Label htmlFor="domain">Domínio</Label>
-              <Input
-                id="domain"
-                name="domain"
-                placeholder="exemplo.com.br"
-                value={formData.domain}
-                onChange={handleChange}
-                required
-                className="rounded-xl"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="themeUrl">URL do Tema</Label>
-              <Input
-                id="themeUrl"
-                name="themeUrl"
-                placeholder="theme.exemplo.com.br"
-                value={formData.themeUrl}
-                onChange={handleChange}
-                required
-                className="rounded-xl"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="updateUrl">URL de Atualização</Label>
-              <Input
-                id="updateUrl"
-                name="updateUrl"
-                placeholder="update.exemplo.com.br"
-                value={formData.updateUrl}
-                onChange={handleChange}
-                required
-                className="rounded-xl"
-              />
-            </div>
-            <DialogFooter>
-              <Button type="submit" disabled={loading} className="w-full bg-[#ff8533] hover:bg-[#ff8533]/90 text-white rounded-xl">
-                {loading ? "Salvando..." : "Salvar Licença"}
-              </Button>
-            </DialogFooter>
-          </form>
-        )}
+
+          <div className="grid gap-2">
+            <Label htmlFor="themeUrl">URL do Tema</Label>
+            <Input
+              id="themeUrl"
+              name="themeUrl"
+              placeholder="theme.exemplo.com.br"
+              value={formData.themeUrl}
+              onChange={handleChange}
+              required
+              className="rounded-xl"
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="updateUrl">URL de Atualização</Label>
+            <Input
+              id="updateUrl"
+              name="updateUrl"
+              placeholder="update.exemplo.com.br"
+              value={formData.updateUrl}
+              onChange={handleChange}
+              required
+              className="rounded-xl"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button 
+              type="submit" 
+              disabled={loading || domainExists} 
+              className="w-full bg-[#ff8533] hover:bg-[#ff8533]/90 text-white rounded-xl"
+            >
+              {loading ? "Redirecionando..." : "Comprar Launcher"}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
