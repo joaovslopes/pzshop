@@ -28,7 +28,7 @@ export default function ObrigadoPage() {
         }
 
         await axios.post(
-          "http://localhost:3000/api/buy/product",
+          "https://apisite.pzdev.com.br/api/buy/product",
           { userId, productId },
           { headers: { Authorization: `Bearer ${token}` } }
         );
