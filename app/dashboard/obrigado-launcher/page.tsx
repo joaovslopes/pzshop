@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,11 @@ export default function ObrigadoLauncherPage() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [checkingDomain, setCheckingDomain] = useState(false);
+  const [domainExists, setDomainExists] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const debounceRef = useRef<NodeJS.Timeout>();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -30,6 +34,28 @@ export default function ObrigadoLauncherPage() {
       ...prev,
       [name]: value
     }));
+
+    // Se editar o domínio, verificar duplicidade
+    if (name === "domain") {
+      setDomainExists(false);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+
+      if (!value) return;
+
+      setCheckingDomain(true);
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const res = await axios.get("https://apisite.pzdev.com.br/api/launcher/check-domain", {
+            params: { domain: value }
+          });
+          setDomainExists(res.data.exists);
+        } catch {
+          // pode ignorar erro
+        } finally {
+          setCheckingDomain(false);
+        }
+      }, 500);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,6 +63,11 @@ export default function ObrigadoLauncherPage() {
 
     if (!formData.domain || !formData.themeUrl || !formData.updateUrl) {
       toast.error("Preencha todos os campos.");
+      return;
+    }
+
+    if (domainExists) {
+      toast.error("Este domínio já está em uso. Escolha outro.");
       return;
     }
 
@@ -118,6 +149,12 @@ export default function ObrigadoLauncherPage() {
               onChange={handleChange}
               required
             />
+            {checkingDomain && (
+              <p className="text-xs text-muted-foreground">Verificando domínio...</p>
+            )}
+            {domainExists && !checkingDomain && (
+              <p className="text-xs text-destructive">Este domínio já está em uso. Escolha outro.</p>
+            )}
           </div>
 
           <div className="grid gap-2">
@@ -147,7 +184,7 @@ export default function ObrigadoLauncherPage() {
           <Button
             type="submit"
             className="w-full bg-[#ff8533] hover:bg-[#ff8533]/90 text-white rounded-xl"
-            disabled={loading}
+            disabled={loading || domainExists}
           >
             {loading ? "Salvando..." : "Salvar Licença"}
           </Button>
