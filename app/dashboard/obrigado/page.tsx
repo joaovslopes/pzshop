@@ -54,7 +54,7 @@ export default function ObrigadoPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-center">
+      
         <div>
           <h1 className="text-3xl font-bold mb-4">Ocorreu um erro!</h1>
           <p className="text-lg">Não conseguimos finalizar sua compra. Por favor, entre em contato com o suporte.</p>
@@ -65,22 +65,22 @@ export default function ObrigadoPage() {
             Voltar para Home
           </button>
         </div>
-      </div>
+ 
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center text-center">
-      <div>
-        <h1 className="text-3xl font-bold mb-4">Compra concluída com sucesso!</h1>
-        <p className="text-lg">Obrigado pela sua compra. Seu acesso foi liberado!</p>
-        <button
-          onClick={() => router.push('/')}
-          className="mt-6 px-6 py-3 bg-[#ff8533] text-white rounded-xl hover:bg-[#e6742b]"
-        >
-          Ir para Home
-        </button>
-      </div>
+    <div>
+      <h1 className="text-3xl font-bold mb-4">Compra concluída com sucesso!</h1>
+      <p className="text-lg">Obrigado pela sua compra. Seu acesso foi liberado!</p>
+      <button
+        onClick={() => router.push('/dashboard/scripts')}
+        className="mt-6 px-6 py-3 bg-[#ff8533] text-white rounded-xl hover:bg-[#e6742b]"
+      >
+        Ir para área de downloads
+      </button>
     </div>
+
+
   );
 }

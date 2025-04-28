@@ -6,7 +6,6 @@ export default function ErrorPage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen flex items-center justify-center text-center">
       <div>
         <h1 className="text-3xl font-bold mb-4">Ocorreu um erro no pagamento!</h1>
         <p className="text-lg mb-6">
@@ -19,6 +18,6 @@ export default function ErrorPage() {
           Voltar para Home
         </button>
       </div>
-    </div>
+  
   );
 }
