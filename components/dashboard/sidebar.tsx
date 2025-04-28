@@ -111,7 +111,7 @@ export function DashboardSidebar() {
   const menuItems = [
     { title: "Início", icon: Home, href: "/dashboard" },
     { title: "PZ Launcher", icon: LayoutDashboardIcon, href: "/dashboard/launcher" },
-    //{ title: "PZ Scripts", icon: Code, href: "/dashboard/scripts" },
+    { title: "PZ Downloads", icon: Code, href: "/dashboard/scripts" },
     { title: "Loja", icon: ShoppingBagIcon, href: "/dashboard/loja" },
   ]
 
