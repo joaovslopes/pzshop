@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import axios from "axios"
 import { toast } from "react-toastify"
 import { Button } from "@/components/ui/button"
@@ -35,6 +35,50 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { t } = useTranslation()
+
+  // 1) Pega token do localStorage
+  const token = typeof window !== "undefined"
+    ? localStorage.getItem("token")
+    : null
+
+  // 2) Decodifica o payload do JWT para extrair userId
+  const decodeToken = (tokenStr: string) => {
+    try {
+      const [, payloadB64] = tokenStr.split(".")
+      const payloadJson = atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/"))
+      return JSON.parse(payloadJson)
+    } catch {
+      return {}
+    }
+  }
+  const userId = token ? (decodeToken(token) as any).userId : null
+
+  // 3) Estado para licenças de script que o usuário já possui
+  const [licenseScript, setLicenseScript] = useState<string[]>([])
+
+  // 4) Buscar o usuário e extrair licenseScript
+  useEffect(() => {
+    if (!token || !userId) return
+    ;(async () => {
+      try {
+        const resp = await axios.get(
+          "https://apisite.pzdev.com.br/api/users",
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+        const users: any[] = resp.data.data
+        const me = users.find(u => u._id === userId)
+        if (me?.licenseScript) {
+          setLicenseScript(me.licenseScript)
+        }
+      } catch {
+        // não interrompe render; opcional log
+      }
+    })()
+  }, [token, userId])
+
+  // 5) Checa se já possui o script
+  const alreadyOwned = licenseScript.includes(product._id)
+
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isVideoOpen, setIsVideoOpen] = useState(false)
 
@@ -43,28 +87,31 @@ export function ProductCard({ product }: ProductCardProps) {
       ? `${product.description.substring(0, 120)}...`
       : product.description
 
-  // Puxa o token do localStorage (ou adapte para o seu hook de autenticação)
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
-
   const handleBuyClick = async () => {
+    if (!token || !userId) {
+      toast.error("Você precisa estar logado para comprar.")
+      return
+    }
+
     if (product.isLauncher) {
-      // abre modal de licença
       setIsModalOpen(true)
       return
     }
 
-    if (!token) {
-      toast.error("Você precisa estar logado para comprar.")
+    if (alreadyOwned) {
+      toast.info("Você já adquiriu este produto.")
       return
     }
 
     try {
       await axios.post(
         "https://apisite.pzdev.com.br/api/buy/product",
-        { productId: product._id },
+        { userId, productId: product._id },    // ⬅ atende ao controlador :contentReference[oaicite:0]{index=0}&#8203;:contentReference[oaicite:1]{index=1}
         { headers: { Authorization: `Bearer ${token}` } }
       )
-      toast.success("Script comprado com sucesso!")
+      toast.success("Compra realizada com sucesso!")
+      // opcional: atualizar licenseScript local
+      setLicenseScript(prev => [...prev, product._id])
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Erro ao comprar script.")
     }
@@ -73,7 +120,6 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <>
       <Card className="overflow-hidden rounded-2xl transition-all duration-300 hover:shadow-lg h-full flex flex-col">
-        {/* Imagem / vídeo */}
         <div className="relative aspect-video w-full overflow-hidden group">
           {product.image ? (
             <Image
@@ -118,16 +164,20 @@ export function ProductCard({ product }: ProductCardProps) {
             <div className="text-muted-foreground text-sm ml-1">/{product.tag}</div>
           </div>
           <Button
-            className="rounded-xl bg-[#ff8533] hover:bg-[#ff8533]/90 text-white"
             onClick={handleBuyClick}
+            disabled={alreadyOwned && !product.isLauncher}
+            className="rounded-xl bg-[#ff8533] hover:bg-[#ff8533]/90 text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {t("common.buyNow")}
+            {product.isLauncher
+              ? t("common.buyNow")
+              : alreadyOwned
+              ? "Já adquirido"
+              : t("common.buyNow")}
             <ExternalLink className="ml-2 h-4 w-4" />
           </Button>
         </CardContent>
       </Card>
 
-      {/* Modal de compra de licença */}
       {product.isLauncher && (
         <BuyLauncherModal
           isOpen={isModalOpen}
@@ -137,7 +187,6 @@ export function ProductCard({ product }: ProductCardProps) {
         />
       )}
 
-      {/* Modal de vídeo */}
       {product.video && (
         <Dialog open={isVideoOpen} onOpenChange={setIsVideoOpen}>
           <DialogContent className="max-w-3xl w-full">
