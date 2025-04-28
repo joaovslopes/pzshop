@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import axios from "axios"
-import { toast } from "react-toastify"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -11,111 +11,106 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import Image from "next/image"
-import { ExternalLink, PlayCircle } from "lucide-react"
-import { BuyLauncherModal } from "@/components/buy-launcher-modal"
-import { useTranslation } from "@/hooks/use-translation"
+} from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import Image from "next/image";
+import { ExternalLink, PlayCircle } from "lucide-react";
+import { BuyLauncherModal } from "@/components/buy-launcher-modal";
+import { useTranslation } from "@/hooks/use-translation";
 
 interface Product {
-  _id: string
-  name: string
-  description: string
-  price: string
-  image?: string
-  video?: string
-  tag: string
-  isLauncher?: boolean
+  _id: string;
+  name: string;
+  description: string;
+  price: string;
+  image?: string;
+  video?: string;
+  tag: string;
+  isLauncher?: boolean;
 }
 
 interface ProductCardProps {
-  product: Product
+  product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation();
 
-  // 1) Pega token do localStorage
-  const token = typeof window !== "undefined"
-    ? localStorage.getItem("token")
-    : null
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-  // 2) Decodifica o payload do JWT para extrair userId
   const decodeToken = (tokenStr: string) => {
     try {
-      const [, payloadB64] = tokenStr.split(".")
-      const payloadJson = atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/"))
-      return JSON.parse(payloadJson)
+      const [, payloadB64] = tokenStr.split(".");
+      const payloadJson = atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/"));
+      return JSON.parse(payloadJson);
     } catch {
-      return {}
+      return {};
     }
-  }
-  const userId = token ? (decodeToken(token) as any).userId : null
+  };
+  const userId = token ? (decodeToken(token) as any).userId : null;
 
-  // 3) Estado para licenças de script que o usuário já possui
-  const [licenseScript, setLicenseScript] = useState<string[]>([])
+  const [licenseScript, setLicenseScript] = useState<string[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
 
-  // 4) Buscar o usuário e extrair licenseScript
-  useEffect(() => {
-    if (!token || !userId) return
-    ;(async () => {
-      try {
-        const resp = await axios.get(
-          "https://apisite.pzdev.com.br/api/users",
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-        const users: any[] = resp.data.data
-        const me = users.find(u => u._id === userId)
-        if (me?.licenseScript) {
-          setLicenseScript(me.licenseScript)
-        }
-      } catch {
-        // não interrompe render; opcional log
-      }
-    })()
-  }, [token, userId])
-
-  // 5) Checa se já possui o script
-  const alreadyOwned = licenseScript.includes(product._id)
-
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isVideoOpen, setIsVideoOpen] = useState(false)
+  const alreadyOwned = licenseScript.includes(product._id);
 
   const truncatedDescription =
     product.description.length > 120
       ? `${product.description.substring(0, 120)}...`
-      : product.description
+      : product.description;
+
+  useEffect(() => {
+    if (!token || !userId) return;
+    (async () => {
+      try {
+        const resp = await axios.get("https://apisite.pzdev.com.br/api/users/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const users: any[] = resp.data.data;
+        const me = users.find((u) => u._id === userId);
+        if (me?.licenseScript) {
+          setLicenseScript(me.licenseScript);
+        }
+      } catch {
+        // opcional: log
+      }
+    })();
+  }, [token, userId]);
 
   const handleBuyClick = async () => {
     if (!token || !userId) {
-      toast.error("Você precisa estar logado para comprar.")
-      return
+      toast.error("Você precisa estar logado para comprar.");
+      return;
     }
 
     if (product.isLauncher) {
-      setIsModalOpen(true)
-      return
+      setIsModalOpen(true);
+      return;
     }
 
     if (alreadyOwned) {
-      toast.info("Você já adquiriu este produto.")
-      return
+      toast.info("Você já adquiriu este produto.");
+      return;
     }
 
     try {
-      await axios.post(
-        "https://apisite.pzdev.com.br/api/buy/product",
-        { userId, productId: product._id },    // ⬅ atende ao controlador :contentReference[oaicite:0]{index=0}&#8203;:contentReference[oaicite:1]{index=1}
+      const response = await axios.post(
+        "https://apisite.pzdev.com.br/api/payment/create",
+        { userId, productId: product._id },
         { headers: { Authorization: `Bearer ${token}` } }
-      )
-      toast.success("Compra realizada com sucesso!")
-      // opcional: atualizar licenseScript local
-      setLicenseScript(prev => [...prev, product._id])
+      );
+
+      if (response.data.success) {
+        window.location.href = response.data.init_point;
+      } else {
+        toast.error("Erro ao criar pagamento.");
+      }
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Erro ao comprar script.")
+      console.error(err);
+      toast.error(err.response?.data?.message || "Erro ao criar pagamento.");
     }
-  }
+  };
 
   return (
     <>
@@ -191,9 +186,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <Dialog open={isVideoOpen} onOpenChange={setIsVideoOpen}>
           <DialogContent className="max-w-3xl w-full">
             <DialogHeader>
-              <DialogTitle className="text-lg font-medium">
-                Assistir vídeo
-              </DialogTitle>
+              <DialogTitle className="text-lg font-medium">Assistir vídeo</DialogTitle>
             </DialogHeader>
             <div className="aspect-video w-full">
               <iframe
@@ -207,5 +200,5 @@ export function ProductCard({ product }: ProductCardProps) {
         </Dialog>
       )}
     </>
-  )
+  );
 }
