@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
@@ -23,46 +23,49 @@ interface ProductCardProps {
   product: Product;
 }
 
+const decodeToken = (tokenStr: string) => {
+  try {
+    const [, payloadB64] = tokenStr.split(".");
+    const payloadJson = atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(payloadJson);
+  } catch {
+    return {};
+  }
+};
+
 export function ProductCard({ product }: ProductCardProps) {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
-  const decodeToken = (tokenStr: string) => {
-    try {
-      const [, payloadB64] = tokenStr.split(".");
-      const payloadJson = atob(payloadB64.replace(/-/g, "+").replace(/_/g, "/"));
-      return JSON.parse(payloadJson);
-    } catch {
-      return {};
-    }
-  };
-
-  const decodedUser = token ? decodeToken(token) : null;
-  const userId = decodedUser?.userId || null;
-  const userEmail = decodedUser?.email || null;
-
   const [loading, setLoading] = useState(false);
 
-  const handleBuyClick = async () => {
-    if (!token || !userId) {
+  const handleBuyClick = useCallback(async () => {
+    // 1) pegue o token na hora do clique
+    const token = localStorage.getItem("token");
+    if (!token) {
       toast.error("Você precisa estar logado para comprar.");
+      return;
+    }
+
+    // 2) decodifique e extraia o userId
+    const decoded = decodeToken(token) as any;
+    const userId = decoded.userId;
+    if (!userId) {
+      toast.error("Usuário inválido. Faça login novamente.");
       return;
     }
 
     setLoading(true);
     try {
       const endpoint = product.isLauncher
-        ? "https://apisite.pzdev.com.br/api/payment/create-subscription"  // 🔥 Agora assinatura para Launcher
-        : "https://apisite.pzdev.com.br/api/payment/create";              // 🔥 Script normal compra única
+        ? "https://apisite.pzdev.com.br/api/payment/create-launcher"
+        : "https://apisite.pzdev.com.br/api/payment/create";
 
       const response = await axios.post(
         endpoint,
         {
           userId,
           productId: product._id,
-          email: userEmail, // ⚡ se você quiser passar o e-mail real do usuário também
         },
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -77,8 +80,7 @@ export function ProductCard({ product }: ProductCardProps) {
     } finally {
       setLoading(false);
     }
-  };
-
+  }, [product]);
 
   const truncatedDescription =
     product.description.length > 120
@@ -125,7 +127,7 @@ export function ProductCard({ product }: ProductCardProps) {
           disabled={loading}
           className="rounded-xl bg-[#ff8533] hover:bg-[#ff8533]/90 text-white"
         >
-          {loading ? "Redirecionando..." : (product.isLauncher ? "Assinar" : "Comprar")}
+          {loading ? "Redirecionando..." : "Comprar"}
           <ExternalLink className="ml-2 h-4 w-4" />
         </Button>
       </CardContent>
