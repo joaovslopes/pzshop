@@ -36,7 +36,9 @@ export function ProductCard({ product }: ProductCardProps) {
     }
   };
 
-  const userId = token ? (decodeToken(token) as any).userId : null;
+  const decodedUser = token ? decodeToken(token) : null;
+  const userId = decodedUser?.userId || null;
+  const userEmail = decodedUser?.email || null;
 
   const [loading, setLoading] = useState(false);
 
@@ -49,14 +51,15 @@ export function ProductCard({ product }: ProductCardProps) {
     setLoading(true);
     try {
       const endpoint = product.isLauncher
-        ? "https://apisite.pzdev.com.br/api/payment/create-launcher"
-        : "https://apisite.pzdev.com.br/api/payment/create";
+        ? "https://apisite.pzdev.com.br/api/payment/create-subscription"  // 🔥 Agora assinatura para Launcher
+        : "https://apisite.pzdev.com.br/api/payment/create";              // 🔥 Script normal compra única
 
       const response = await axios.post(
         endpoint,
         {
           userId,
           productId: product._id,
+          email: userEmail, // ⚡ se você quiser passar o e-mail real do usuário também
         },
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -75,6 +78,7 @@ export function ProductCard({ product }: ProductCardProps) {
       setLoading(false);
     }
   };
+
 
   const truncatedDescription =
     product.description.length > 120
@@ -121,7 +125,7 @@ export function ProductCard({ product }: ProductCardProps) {
           disabled={loading}
           className="rounded-xl bg-[#ff8533] hover:bg-[#ff8533]/90 text-white"
         >
-          {loading ? "Redirecionando..." : "Comprar"}
+          {loading ? "Redirecionando..." : (product.isLauncher ? "Assinar" : "Comprar")}
           <ExternalLink className="ml-2 h-4 w-4" />
         </Button>
       </CardContent>
