@@ -122,7 +122,7 @@ export default function ObrigadoLauncherPage() {
         <div>
           <h1 className="text-2xl font-bold mb-4">Licença criada com sucesso!</h1>
           <p>Obrigado por configurar seu launcher. Você já pode utilizá-lo normalmente!</p>
-          <Button onClick={() => router.push("/")} className="mt-6">
+          <Button onClick={() => router.push("/dashboard/scripts")} className="mt-6">
             Voltar para Home
           </Button>
         </div>
