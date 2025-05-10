@@ -36,7 +36,7 @@ const decodeToken = (tokenStr: string) => {
 
 export function ProductCard({ product }: ProductCardProps) {
   const [loading, setLoading] = useState(false);
-  const [openVideo, setOpenVideo] = useState(false); // NOVO: controla abertura do modal
+  const [openVideo, setOpenVideo] = useState(false);
 
   const handleBuyClick = useCallback(async () => {
     const token = localStorage.getItem("token");
@@ -46,7 +46,7 @@ export function ProductCard({ product }: ProductCardProps) {
     }
 
     const decoded = decodeToken(token) as any;
-    const userId = decoded.userId;
+    const userId = decoded.userId || decoded.id;
     if (!userId) {
       toast.error("Usuário inválido. Faça login novamente.");
       return;
@@ -55,18 +55,13 @@ export function ProductCard({ product }: ProductCardProps) {
     setLoading(true);
     try {
       const endpoint = product.isLauncher
-        ? "https://apisite.pzdev.com.br/api/payment/create-launcher"
-        : "https://apisite.pzdev.com.br/api/payment/create";
+        ? "https://apisite.pzdev.com.br/api/payment/create-payment-launcher"
+        : "https://apisite.pzdev.com.br/api/payment/create-payment";
 
       const response = await axios.post(
         endpoint,
-        {
-          userId,
-          productId: product._id,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { userId, productId: product._id },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.data.success) {
@@ -103,7 +98,6 @@ export function ProductCard({ product }: ProductCardProps) {
             <div className="aspect-video w-full bg-gradient-to-r from-[#070707] to-[#ff8533]/20" />
           )}
 
-          {/* Botão de play para abrir vídeo */}
           {product.video && (
             <button
               onClick={() => setOpenVideo(true)}
@@ -144,11 +138,10 @@ export function ProductCard({ product }: ProductCardProps) {
         </CardContent>
       </Card>
 
-      {/* Modal de Vídeo */}
       <Dialog open={openVideo} onOpenChange={setOpenVideo}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle className="sr-only">Vídeo do Produto</DialogTitle> {/* Título invisível para o usuário, mas visível para screen readers */}
+            <DialogTitle className="sr-only">Vídeo do Produto</DialogTitle>
           </DialogHeader>
           <div className="relative pb-[56.25%] h-0">
             <iframe
