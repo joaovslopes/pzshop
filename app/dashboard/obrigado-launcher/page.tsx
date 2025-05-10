@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, FormEvent } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { Input } from "@/components/ui/input";
@@ -12,45 +12,73 @@ export default function ObrigadoLauncherPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const userId = searchParams.get("userId");
+  const userId    = searchParams.get("userId");
   const productId = searchParams.get("productId");
+  const paymentId = searchParams.get("payment_id");
+  const status    = searchParams.get("status");
+
+  const [step, setStep] = useState<"verifying" | "form" | "error" | "success">("verifying");
+  const [errorMsg, setErrorMsg] = useState<string>("");
 
   const [formData, setFormData] = useState({
     domain: "",
     themeUrl: "",
     updateUrl: ""
   });
+  const [loadingSave, setLoadingSave] = useState(false);
 
-  const [loading, setLoading] = useState(false);
+  // domain validation
   const [checkingDomain, setCheckingDomain] = useState(false);
   const [domainExists, setDomainExists] = useState(false);
-  const [success, setSuccess] = useState(false);
-
   const debounceRef = useRef<NodeJS.Timeout>();
 
+  // 1) Verify payment on mount
+  useEffect(() => {
+    async function verify() {
+      if (!userId || !productId || !paymentId || status !== "approved") {
+        setErrorMsg("Parâmetros inválidos ou pagamento não aprovado.");
+        setStep("error");
+        return;
+      }
+
+      try {
+        const res = await axios.get("https://apisite.pzdev.com.br/api/dashboard/obrigado-launcher", {
+          params: { userId, productId, payment_id: paymentId, status }
+        });
+        if (res.data.success) {
+          setStep("form");
+        } else {
+          setErrorMsg(res.data.message || "Falha na verificação do pagamento.");
+          setStep("error");
+        }
+      } catch (err: any) {
+        console.error(err);
+        setErrorMsg(err.response?.data?.message || "Erro interno ao verificar pagamento.");
+        setStep("error");
+      }
+    }
+    verify();
+  }, [userId, productId, paymentId, status]);
+
+  // 2) Handle form field changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
 
-    // Se editar o domínio, verificar duplicidade
     if (name === "domain") {
       setDomainExists(false);
       if (debounceRef.current) clearTimeout(debounceRef.current);
-
       if (!value) return;
 
       setCheckingDomain(true);
       debounceRef.current = setTimeout(async () => {
         try {
-          const res = await axios.get("https://apisite.pzdev.com.br/api/launcher/check-domain", {
+          const { data } = await axios.get("https://apisite.pzdev.com.br/api/launcher/check-domain", {
             params: { domain: value }
           });
-          setDomainExists(res.data.exists);
+          setDomainExists(data.exists);
         } catch {
-          // pode ignorar erro
+          // ignore errors
         } finally {
           setCheckingDomain(false);
         }
@@ -58,26 +86,24 @@ export default function ObrigadoLauncherPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // 3) Handle form submission
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-
     if (!formData.domain || !formData.themeUrl || !formData.updateUrl) {
       toast.error("Preencha todos os campos.");
       return;
     }
-
     if (domainExists) {
       toast.error("Este domínio já está em uso. Escolha outro.");
       return;
     }
-
     const token = localStorage.getItem("token");
-    if (!token || !userId) {
+    if (!token) {
       toast.error("Usuário não autenticado.");
       return;
     }
 
-    setLoading(true);
+    setLoadingSave(true);
     try {
       await axios.post(
         "https://apisite.pzdev.com.br/api/buy/license",
@@ -87,109 +113,100 @@ export default function ObrigadoLauncherPage() {
           themeUrl: formData.themeUrl,
           updateUrl: formData.updateUrl
         },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       toast.success("Licença criada com sucesso!");
-      setSuccess(true);
-    } catch (err: any) {
+      setStep("success");
+    } catch (err) {
       console.error(err);
       toast.error("Erro ao salvar licença.");
     } finally {
-      setLoading(false);
+      setLoadingSave(false);
     }
   };
 
-  if (!userId || !productId) {
+  // Render
+  if (step === "verifying") {
     return (
-
-        <div>
-          <h1 className="text-2xl font-bold mb-4">Informações inválidas!</h1>
-          <p>Não conseguimos identificar sua compra. Por favor, entre em contato com o suporte.</p>
-          <Button onClick={() => router.push("/")} className="mt-6">
-            Voltar para Home
-          </Button>
-        </div>
-   
+      <div className="min-h-screen flex items-center justify-center">
+        <p>Validando pagamento, aguarde...</p>
+      </div>
     );
   }
-
-  if (success) {
+  if (step === "error") {
     return (
-    
-        <div>
-          <h1 className="text-2xl font-bold mb-4">Licença criada com sucesso!</h1>
-          <p>Obrigado por configurar seu launcher. Você já pode utilizá-lo normalmente!</p>
-          <Button onClick={() => router.push("/dashboard/scripts")} className="mt-6">
-            Voltar para Home
-          </Button>
-        </div>
- 
+      <div className="min-h-screen flex flex-col items-center justify-center px-4">
+        <h1 className="text-2xl font-bold mb-4">Ocorreu um erro!</h1>
+        <p className="text-center mb-6">{errorMsg}</p>
+        <Button onClick={() => router.push("/")} className="bg-[#ff8533]">
+          Voltar para Home
+        </Button>
+      </div>
     );
   }
-
+  if (step === "success") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4">
+        <h1 className="text-2xl font-bold mb-4">Licença criada com sucesso!</h1>
+        <p className="mb-6">Obrigado por configurar seu launcher. Você já pode utilizá-lo normalmente!</p>
+        <Button onClick={() => router.push("/dashboard/scripts")} className="bg-[#ff8533]">
+          Ir para área de downloads
+        </Button>
+      </div>
+    );
+  }
+  // step === "form"
   return (
-  
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-2">Configure seu Launcher</h1>
-          <p className="text-muted-foreground text-sm">Preencha as informações abaixo para finalizar a criação da sua licença.</p>
-        </div>
+    <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto space-y-6 mt-16">
+      <h1 className="text-3xl font-bold text-center">Configure seu Launcher</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-2">
-            <Label htmlFor="domain">Domínio</Label>
-            <Input
-              id="domain"
-              name="domain"
-              placeholder="exemplo.com.br"
-              value={formData.domain}
-              onChange={handleChange}
-              required
-            />
-            {checkingDomain && (
-              <p className="text-xs text-muted-foreground">Verificando domínio...</p>
-            )}
-            {domainExists && !checkingDomain && (
-              <p className="text-xs text-destructive">Este domínio já está em uso. Escolha outro.</p>
-            )}
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="themeUrl">URL do Tema</Label>
-            <Input
-              id="themeUrl"
-              name="themeUrl"
-              placeholder="theme.exemplo.com.br"
-              value={formData.themeUrl}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="updateUrl">URL de Atualização</Label>
-            <Input
-              id="updateUrl"
-              name="updateUrl"
-              placeholder="update.exemplo.com.br"
-              value={formData.updateUrl}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full bg-[#ff8533] hover:bg-[#ff8533]/90 text-white rounded-xl"
-            disabled={loading || domainExists}
-          >
-            {loading ? "Salvando..." : "Salvar Licença"}
-          </Button>
-        </form>
+      <div className="space-y-1">
+        <Label htmlFor="domain">Domínio</Label>
+        <Input
+          id="domain"
+          name="domain"
+          placeholder="exemplo.com.br"
+          value={formData.domain}
+          onChange={handleChange}
+          required
+        />
+        {checkingDomain && <p className="text-xs text-muted-foreground">Verificando domínio...</p>}
+        {domainExists && !checkingDomain && (
+          <p className="text-xs text-destructive">Este domínio já está em uso. Escolha outro.</p>
+        )}
       </div>
 
+      <div className="space-y-1">
+        <Label htmlFor="themeUrl">URL do Tema</Label>
+        <Input
+          id="themeUrl"
+          name="themeUrl"
+          placeholder="theme.exemplo.com.br"
+          value={formData.themeUrl}
+          onChange={handleChange}
+          required
+        />
+      </div>
+
+      <div className="space-y-1">
+        <Label htmlFor="updateUrl">URL de Atualização</Label>
+        <Input
+          id="updateUrl"
+          name="updateUrl"
+          placeholder="update.exemplo.com.br"
+          value={formData.updateUrl}
+          onChange={handleChange}
+          required
+        />
+      </div>
+
+      <Button
+        type="submit"
+        className="w-full bg-[#ff8533] hover:bg-[#e6742b] text-white"
+        disabled={loadingSave || domainExists}
+      >
+        {loadingSave ? "Salvando..." : "Salvar Configuração"}
+      </Button>
+    </form>
   );
 }
