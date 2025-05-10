@@ -3,20 +3,20 @@
 import { useRouter } from 'next/navigation';
 import { usePaymentPolling } from '@/app/hooks/usePaymentPolling';
 
-export default function ProductPendingPage() {
+export default function LauncherPendingPage() {
   const router = useRouter();
 
   usePaymentPolling(() => {
     const params = new URLSearchParams(location.search);
-    router.push(`/dashboard/obrigado?${params.toString()}`);
+    router.push(`/dashboard/obrigado-launcher?${params.toString()}`);
   });
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6">
-      <h1 className="text-3xl font-bold mb-4">Pagamento pendente!</h1>
+      <h1 className="text-3xl font-bold mb-4">Pagamento de Launcher pendente!</h1>
       <p className="text-lg mb-6 text-center">
-        Recebemos sua solicitação, mas o pagamento ainda não foi confirmado.<br/>
-        Assim que for aprovado, seu acesso será liberado automaticamente!
+        Recebemos sua solicitação, mas o pagamento do Launcher ainda não foi confirmado.<br/>
+        Assim que for aprovado, você poderá configurar seu launcher automaticamente!
       </p>
       <button
         onClick={() => router.push('/')}
