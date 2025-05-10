@@ -63,7 +63,7 @@ export default function ObrigadoPage() {
 
   if (errorMsg) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
+      <div className="">
         <h1 className="text-3xl font-bold mb-4">Ocorreu um erro!</h1>
         <p className="text-lg mb-6">{errorMsg}</p>
         <button
@@ -77,7 +77,7 @@ export default function ObrigadoPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center">
+    <div className="">
       <h1 className="text-3xl font-bold mb-4">Compra concluída com sucesso!</h1>
       <p className="text-lg mb-6">Obrigado pela sua compra. Seu acesso foi liberado!</p>
       <button

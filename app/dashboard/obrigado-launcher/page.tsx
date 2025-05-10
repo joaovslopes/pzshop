@@ -128,14 +128,14 @@ export default function ObrigadoLauncherPage() {
   // Render
   if (step === "verifying") {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="">
         <p>Validando pagamento, aguarde...</p>
       </div>
     );
   }
   if (step === "error") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4">
+      <div className="">
         <h1 className="text-2xl font-bold mb-4">Ocorreu um erro!</h1>
         <p className="text-center mb-6">{errorMsg}</p>
         <Button onClick={() => router.push("/")} className="bg-[#ff8533]">
@@ -146,7 +146,7 @@ export default function ObrigadoLauncherPage() {
   }
   if (step === "success") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4">
+      <div className="">
         <h1 className="text-2xl font-bold mb-4">Licença criada com sucesso!</h1>
         <p className="mb-6">Obrigado por configurar seu launcher. Você já pode utilizá-lo normalmente!</p>
         <Button onClick={() => router.push("/dashboard/scripts")} className="bg-[#ff8533]">
