@@ -55,8 +55,8 @@ export function ProductCard({ product }: ProductCardProps) {
     setLoading(true);
     try {
       const endpoint = product.isLauncher
-        ? "https://apisite.pzdev.com.br/api/payment/create-payment-launcher"
-        : "https://apisite.pzdev.com.br/api/payment/create-payment";
+        ? "https://apisite.pzdev.com.br/api/payment/create-launcher"
+        : "https://apisite.pzdev.com.br/api/payment/create";
 
       const response = await axios.post(
         endpoint,

@@ -10,31 +10,30 @@ import { toast } from "react-toastify";
 
 export default function ObrigadoLauncherPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router      = useRouter();
 
   const userId    = searchParams.get("userId");
   const productId = searchParams.get("productId");
   const paymentId = searchParams.get("payment_id");
   const status    = searchParams.get("status");
 
-  const [step, setStep] = useState<"verifying" | "form" | "error" | "success">("verifying");
-  const [errorMsg, setErrorMsg] = useState<string>("");
+  const [step, setStep]       = useState<"verifying"|"form"|"error"|"success">("verifying");
+  const [errorMsg, setErrorMsg] = useState("");
 
   const [formData, setFormData] = useState({
-    domain: "",
+    domain:   "",
     themeUrl: "",
     updateUrl: ""
   });
   const [loadingSave, setLoadingSave] = useState(false);
 
-  // domain validation
   const [checkingDomain, setCheckingDomain] = useState(false);
-  const [domainExists, setDomainExists] = useState(false);
+  const [domainExists, setDomainExists]     = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>();
 
-  // 1) Verify payment on mount
   useEffect(() => {
     async function verify() {
+      // 1) parâmetros mínimos
       if (!userId || !productId || !paymentId || status !== "approved") {
         setErrorMsg("Parâmetros inválidos ou pagamento não aprovado.");
         setStep("error");
@@ -42,25 +41,28 @@ export default function ObrigadoLauncherPage() {
       }
 
       try {
-        const res = await axios.get("https://apisite.pzdev.com.br/api/dashboard/obrigado-launcher", {
-          params: { userId, productId, payment_id: paymentId, status }
+        // 2) chama a rota front-end que registra a licença no GET
+        await axios.get("https://www.pzdev.com.br/dashboard/obrigado-launcher", {
+          params: {
+            userId,
+            productId,
+            payment_id:    paymentId,
+            collection_status: status,
+            status
+          }
         });
-        if (res.data.success) {
-          setStep("form");
-        } else {
-          setErrorMsg(res.data.message || "Falha na verificação do pagamento.");
-          setStep("error");
-        }
+        // se deu 200, a licença já foi salva pelo backend
+        setStep("form");
       } catch (err: any) {
         console.error(err);
-        setErrorMsg(err.response?.data?.message || "Erro interno ao verificar pagamento.");
+        const msg = err.response?.statusText || "Falha ao verificar e registrar licença.";
+        setErrorMsg(msg);
         setStep("error");
       }
     }
     verify();
   }, [userId, productId, paymentId, status]);
 
-  // 2) Handle form field changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -78,7 +80,7 @@ export default function ObrigadoLauncherPage() {
           });
           setDomainExists(data.exists);
         } catch {
-          // ignore errors
+          // ignore
         } finally {
           setCheckingDomain(false);
         }
@@ -86,17 +88,18 @@ export default function ObrigadoLauncherPage() {
     }
   };
 
-  // 3) Handle form submission
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!formData.domain || !formData.themeUrl || !formData.updateUrl) {
+    const { domain, themeUrl, updateUrl } = formData;
+    if (!domain || !themeUrl || !updateUrl) {
       toast.error("Preencha todos os campos.");
       return;
     }
     if (domainExists) {
-      toast.error("Este domínio já está em uso. Escolha outro.");
+      toast.error("Este domínio já está em uso.");
       return;
     }
+
     const token = localStorage.getItem("token");
     if (!token) {
       toast.error("Usuário não autenticado.");
@@ -107,12 +110,7 @@ export default function ObrigadoLauncherPage() {
     try {
       await axios.post(
         "https://apisite.pzdev.com.br/api/buy/license",
-        {
-          userId,
-          domain: formData.domain,
-          themeUrl: formData.themeUrl,
-          updateUrl: formData.updateUrl
-        },
+        { userId, domain, themeUrl, updateUrl },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success("Licença criada com sucesso!");
@@ -125,19 +123,14 @@ export default function ObrigadoLauncherPage() {
     }
   };
 
-  // Render
   if (step === "verifying") {
-    return (
-      <div className="">
-        <p>Validando pagamento, aguarde...</p>
-      </div>
-    );
+    return <p>Validando pagamento, aguarde...</p>;
   }
   if (step === "error") {
     return (
-      <div className="">
-        <h1 className="text-2xl font-bold mb-4">Ocorreu um erro!</h1>
-        <p className="text-center mb-6">{errorMsg}</p>
+      <div>
+        <h1>Ocorreu um erro!</h1>
+        <p>{errorMsg}</p>
         <Button onClick={() => router.push("/")} className="bg-[#ff8533]">
           Voltar para Home
         </Button>
@@ -146,21 +139,22 @@ export default function ObrigadoLauncherPage() {
   }
   if (step === "success") {
     return (
-      <div className="">
-        <h1 className="text-2xl font-bold mb-4">Licença criada com sucesso!</h1>
-        <p className="mb-6">Obrigado por configurar seu launcher. Você já pode utilizá-lo normalmente!</p>
+      <div>
+        <h1>Licença criada com sucesso!</h1>
+        <p>Você já pode usar seu launcher normalmente.</p>
         <Button onClick={() => router.push("/dashboard/scripts")} className="bg-[#ff8533]">
-          Ir para área de downloads
+          Ir para downloads
         </Button>
       </div>
     );
   }
-  // step === "form"
-  return (
-    <form onSubmit={handleSubmit} className="w-full max-w-md mx-auto space-y-6 mt-16">
-      <h1 className="text-3xl font-bold text-center">Configure seu Launcher</h1>
 
-      <div className="space-y-1">
+  // form
+  return (
+    <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-6 mt-16">
+      <h1 className="text-2xl font-bold text-center">Configure seu Launcher</h1>
+
+      <div>
         <Label htmlFor="domain">Domínio</Label>
         <Input
           id="domain"
@@ -170,13 +164,11 @@ export default function ObrigadoLauncherPage() {
           onChange={handleChange}
           required
         />
-        {checkingDomain && <p className="text-xs text-muted-foreground">Verificando domínio...</p>}
-        {domainExists && !checkingDomain && (
-          <p className="text-xs text-destructive">Este domínio já está em uso. Escolha outro.</p>
-        )}
+        {checkingDomain && <p>Verificando domínio...</p>}
+        {domainExists && <p className="text-red-500">Domínio já em uso.</p>}
       </div>
 
-      <div className="space-y-1">
+      <div>
         <Label htmlFor="themeUrl">URL do Tema</Label>
         <Input
           id="themeUrl"
@@ -188,7 +180,7 @@ export default function ObrigadoLauncherPage() {
         />
       </div>
 
-      <div className="space-y-1">
+      <div>
         <Label htmlFor="updateUrl">URL de Atualização</Label>
         <Input
           id="updateUrl"
@@ -200,11 +192,7 @@ export default function ObrigadoLauncherPage() {
         />
       </div>
 
-      <Button
-        type="submit"
-        className="w-full bg-[#ff8533] hover:bg-[#e6742b] text-white"
-        disabled={loadingSave || domainExists}
-      >
+      <Button type="submit" disabled={loadingSave || domainExists} className="w-full bg-[#ff8533]">
         {loadingSave ? "Salvando..." : "Salvar Configuração"}
       </Button>
     </form>
